@@ -1,0 +1,17 @@
+{
+    "name": "@pewresearch/prc-report-package-interface",
+    "version": "1.0.0",
+    "description": "Provides an interface for managing report package relationships and materials.",
+    "scripts": {
+        "build": "wp-scripts build",
+		"start": "wp-scripts start"
+    },
+    "devDependencies": {
+        "@wordpress/scripts": "^30.15.0"
+    },
+    "dependencies": {
+        "@wordpress/icons": "^10.22.0",
+		"@emotion/styled": "^11.14.0",
+		"react-movable": "^3.0.4"
+    }
+}

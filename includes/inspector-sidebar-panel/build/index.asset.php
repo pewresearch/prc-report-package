@@ -1,0 +1,1 @@
+<?php return array('dependencies' => array('prc-components', 'prc-hooks', 'react', 'react-dom', 'react-jsx-runtime', 'wp-block-editor', 'wp-components', 'wp-core-data', 'wp-data', 'wp-editor', 'wp-element', 'wp-html-entities', 'wp-i18n', 'wp-plugins', 'wp-polyfill', 'wp-primitives', 'wp-url'), 'version' => '82ed90e382e25edeafb3');
