@@ -64,7 +64,10 @@ function ReportPackagePanel() {
 				</ProvidePostReportPackage>
 			</PluginSidebar>
 			{!isChildPost && (
-				<PluginPrePublishPanel title="Review Report Package">
+				<PluginPrePublishPanel
+					title="Review Report Package"
+					icon={false}
+				>
 					<ProvidePostReportPackage
 						{...{
 							postType,
