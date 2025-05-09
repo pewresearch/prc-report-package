@@ -1,7 +1,7 @@
 {
-	"name": "@pewresearch/prc-report-package",
+	"name": "@prc/report-package",
 	"version": "1.0.0",
-	"description": "Provides a module for PRC Platform that manages report package relationships and materials.",
+	"description": "PRC Report Package is a module for PRC Platform that manages report package relationships and materials.",
     "scripts": {
         "build": "wp-scripts build",
         "test": "wp-scripts test-playwright",
