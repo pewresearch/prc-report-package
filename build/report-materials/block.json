@@ -57,7 +57,7 @@
 			"link": true
 		},
 		"spacing": {
-			"margin": [ "top", "bottom", "left", "right" ],
+			"margin": ["top", "bottom", "left", "right"],
 			"blockGap": true,
 			"__experimentalDefaultControls": {
 				"margin": true,
@@ -72,13 +72,13 @@
 			}
 		}
 	},
-	"usesContext": [
-		"postId",
-		"postType"
-	],
+	"usesContext": ["postId", "postType"],
 	"textdomain": "report-materials",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
-	"style": ["file:./style-index.css", "prc-block-library--baseball-card",
-    "prc-block-library--additional-color-supports"]
+	"style": [
+		"file:./style-index.css",
+		"prc-block-library--baseball-card",
+		"prc-block-library--additional-color-supports"
+	]
 }

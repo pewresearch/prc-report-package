@@ -35,7 +35,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'PRC_REPORT_PACKAGE_FILE', __FILE__ );
 define( 'PRC_REPORT_PACKAGE_DIR', __DIR__ );
 define( 'PRC_REPORT_PACKAGE_MANIFEST_FILE', __DIR__ . '/build/block-manifest.php' );
-define( 'PRC_REPORT_PACKAGE_BLOCKS_DIR', __DIR__ . '/blocks' );
+define( 'PRC_REPORT_PACKAGE_BLOCKS_DIR', __DIR__ . '/build' );
 define( 'PRC_REPORT_PACKAGE_VERSION', '1.0.0' );
 define( 'PRC_REPORT_PACKAGE_ENABLED_POST_TYPES', array( 'post' ) );
 

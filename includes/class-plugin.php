@@ -76,7 +76,6 @@ class Plugin {
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-rest-api.php';
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-relationship-manager.php';
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-wp-admin.php';
-		require_once plugin_dir_path( __DIR__ ) . '/blocks/class-blocks.php';
 	}
 
 	/**
@@ -89,7 +88,19 @@ class Plugin {
 		new Rest_API( $this->get_loader() );
 		new Relationship_Manager( $this->get_loader() );
 		new WP_Admin( $this->get_loader() );
-		new Blocks( $this->get_loader() );
+
+		// Initialize blocks.
+		wp_register_block_metadata_collection(
+			plugin_dir_path( __DIR__ ) . 'build',
+			plugin_dir_path( __DIR__ ) . 'build/blocks-manifest.php'
+		);
+
+		// Load block classes.
+		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_REPORT_PACKAGE_DIR );
+		if ( ! is_wp_error( $blocks_loaded ) ) {
+			new Report_Materials( $this->get_loader() );
+			new Report_Pagination( $this->get_loader() );
+		}
 	}
 
 	/**

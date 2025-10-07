@@ -57,10 +57,7 @@
 		"anchor": true,
 		"html": false,
 		"spacing": {
-			"blockGap": [
-				"horizontal",
-				"vertical"
-			],
+			"blockGap": ["horizontal", "vertical"],
 			"margin": ["top", "bottom"],
 			"padding": true
 		},

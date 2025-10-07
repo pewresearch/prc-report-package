@@ -205,7 +205,7 @@ class Report_Materials {
 	 */
 	public function block_init() {
 		register_block_type_from_metadata(
-			PRC_REPORT_PACKAGE_BLOCKS_DIR . '/build/report-materials',
+			PRC_REPORT_PACKAGE_BLOCKS_DIR . '/report-materials',
 			array(
 				'render_callback' => array( $this, 'render_block_callback' ),
 			)
