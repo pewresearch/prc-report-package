@@ -46,6 +46,44 @@ class Report_Pagination {
 	}
 
 	/**
+	 * Generate CSS custom properties for color styles.
+	 *
+	 * @param array $attributes Block attributes.
+	 * @return string CSS custom properties as inline style string.
+	 */
+	private function generate_color_styles( array $attributes ): string {
+		$item_bg           = $attributes['customItemBackgroundColor'] ?? '';
+		$item_text         = $attributes['customItemTextColor'] ?? '';
+		$item_border       = $attributes['customItemBorderColor'] ?? '';
+		$item_hover_bg     = $attributes['customItemHoverBackgroundColor'] ?? '';
+		$item_active_bg    = $attributes['customItemActiveBackgroundColor'] ?? '';
+		$next_btn_bg       = $attributes['customNextButtonBackgroundColor'] ?? '';
+		$next_btn_text     = $attributes['customNextButtonTextColor'] ?? '';
+		$next_btn_shadow   = $attributes['customNextButtonBoxShadowColor'] ?? '';
+
+		$styles = array(
+			'--item-background-color'              => $item_bg,
+			'--item-text-color'                    => $item_text,
+			'--item-border-color'                  => $item_border,
+			'--item-hover-background-color'        => $item_hover_bg,
+			'--item-active-background-color'       => $item_active_bg,
+			'--next-button-background-color'       => $next_btn_bg,
+			'--next-button-text-color'             => $next_btn_text,
+			'--next-button-box-shadow-color'       => $next_btn_shadow,
+		);
+
+		$style_string = array_map(
+			static function ( string $key, string $value ): string {
+				return ! empty( $value ) ? $key . ': ' . $value . ';' : '';
+			},
+			array_keys( $styles ),
+			$styles
+		);
+
+		return implode( ' ', array_filter( $style_string ) );
+	}
+
+	/**
 	 * Get the next post button
 	 *
 	 * @param mixed $pagination_data Pagination data.
@@ -62,18 +100,9 @@ class Report_Pagination {
 		$next_post_title = 'Next: ' . $next_post_title;
 		$next_post_link  = $next_post['link'];
 
-		$classnames = \PRC\Platform\Block_Utils\classNames(
-			'wp-block-prc-block-report-pagination__next-post-button',
-			array(
-				'has-text-color' => $attributes['nextButtonTextColor'],
-				'has-' . $attributes['nextButtonTextColor'] . '-color' => $attributes['nextButtonTextColor'],
-				'has-background' => $attributes['nextButtonBackgroundColor'],
-				'has-' . $attributes['nextButtonBackgroundColor'] . '-background-color' => $attributes['backgroundColor'],
-			),
-		);
 		ob_start();
 		?>
-		<a href="<?php echo esc_url( $next_post_link ); ?>" rel="prefetch" class="<?php echo esc_attr( $classnames ); ?>" alt="Go to the next post in this report: <?php echo esc_attr( $next_post_title ); ?>" style="box-shadow: inset 0 3px 4px -2px var(--wp--preset--color--<?php echo $attributes['nextButtonBoxShadowColor']; ?>)">
+		<a href="<?php echo esc_url( $next_post_link ); ?>" rel="prefetch" class="wp-block-prc-block-report-pagination__next-post-button" alt="Go to the next post in this report: <?php echo esc_attr( $next_post_title ); ?>">
 			<?php echo esc_html( $next_post_title ); ?>
 		</a>
 		<?php
@@ -106,33 +135,26 @@ class Report_Pagination {
 
 		$pagination = new \PRC\Platform\Block_Utils\Pagination( $pagination_items );
 
-		$pagination_markup = $pagination->get_markup(
-			array(
-				'item_classnames' => \PRC\Platform\Block_Utils\classNames(
-					array(
-						'has-text-color'        => $attributes['itemTextColor'],
-						'has-' . $attributes['itemTextColor'] . '-color' => $attributes['itemTextColor'],
-						'has-background'        => $attributes['itemBackgroundColor'],
-						'has-' . $attributes['itemBackgroundColor'] . '-background-color' => $attributes['itemBackgroundColor'],
-						'has-border-color'      => $attributes['itemBorderColor'],
-						'has-border-' . $attributes['itemBorderColor'] . '-color' => $attributes['itemBorderColor'],
-						'has-hover-background'  => $attributes['itemHoverBackgroundColor'],
-						'has-hover-' . $attributes['itemHoverBackgroundColor'] . '-background-color' => $attributes['itemHoverBackgroundColor'],
-						'has-active-background' => $attributes['itemActiveBackgroundColor'],
-						'has-active-' . $attributes['itemActiveBackgroundColor'] . '-background-color' => $attributes['itemActiveBackgroundColor'],
-					)
-				),
-			)
-		);
+		$pagination_markup = $pagination->get_markup();
 
 		$next_post_button = $this->get_next_post_button( $pagination_data, $attributes );
 
-		return wp_sprintf(
+		$output = wp_sprintf(
 			'<div %1$s>%2$s %3$s</div>',
 			$wrapper_attributes,
 			$next_post_button,
 			$pagination_markup,
 		);
+
+		// Inject CSS custom properties for color styles.
+		$tag_processor = new \WP_HTML_Tag_Processor( $output );
+		if ( $tag_processor->next_tag( array( 'class_name' => 'wp-block-prc-block-report-pagination' ) ) ) {
+			$style  = (string) $tag_processor->get_attribute( 'style' );
+			$style .= ' ' . $this->generate_color_styles( $attributes );
+			$tag_processor->set_attribute( 'style', $style );
+		}
+
+		return $tag_processor->get_updated_html();
 	}
 
 	/**

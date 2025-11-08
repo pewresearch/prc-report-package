@@ -16,8 +16,19 @@ import {
  * Internal Dependencies
  */
 
-export default function Controls({ colors, clientId, }) {
+export default function Controls({ attributes, setAttributes, colors, clientId, }) {
 	const colorSettings = useMultipleOriginColorsAndGradients();
+
+	const {
+		customItemBackgroundColor,
+		customItemTextColor,
+		customItemBorderColor,
+		customItemHoverBackgroundColor,
+		customItemActiveBackgroundColor,
+		customNextButtonBackgroundColor,
+		customNextButtonTextColor,
+		customNextButtonBoxShadowColor,
+	} = attributes;
 
 	const {
 		textColor,
@@ -57,43 +68,67 @@ export default function Controls({ colors, clientId, }) {
 						label: __('Background'),
 					},
 					{
-						colorValue: itemBackgroundColor?.color,
-						onColorChange: setItemBackgroundColor,
+						colorValue: itemBackgroundColor?.color ?? customItemBackgroundColor,
+						onColorChange: (value) => {
+							setItemBackgroundColor(value);
+							setAttributes({ customItemBackgroundColor: value });
+						},
 						label: __('Item Background'),
 					},
 					{
-						colorValue: itemTextColor?.color,
-						onColorChange: setItemTextColor,
+						colorValue: itemTextColor?.color ?? customItemTextColor,
+						onColorChange: (value) => {
+							setItemTextColor(value);
+							setAttributes({ customItemTextColor: value });
+						},
 						label: __('Item Text'),
 					},
 					{
-						colorValue: itemBorderColor?.color,
-						onColorChange: setItemBorderColor,
+						colorValue: itemBorderColor?.color ?? customItemBorderColor,
+						onColorChange: (value) => {
+							setItemBorderColor(value);
+							setAttributes({ customItemBorderColor: value });
+						},
 						label: __('Item Border'),
 					},
 					{
-						colorValue: itemHoverBackgroundColor?.color,
-						onColorChange: setItemHoverBackgroundColor,
+						colorValue: itemHoverBackgroundColor?.color ?? customItemHoverBackgroundColor,
+						onColorChange: (value) => {
+							setItemHoverBackgroundColor(value);
+							setAttributes({ customItemHoverBackgroundColor: value });
+						},
 						label: __('Item Hover Background'),
 					},
 					{
-						colorValue: itemActiveBackgroundColor?.color,
-						onColorChange: setItemActiveBackgroundColor,
+						colorValue: itemActiveBackgroundColor?.color ?? customItemActiveBackgroundColor,
+						onColorChange: (value) => {
+							setItemActiveBackgroundColor(value);
+							setAttributes({ customItemActiveBackgroundColor: value });
+						},
 						label: __('Item Active Background'),
 					},
 					{
-						colorValue: nextButtonBackgroundColor?.color,
-						onColorChange: setNextButtonBackgroundColor,
+						colorValue: nextButtonBackgroundColor?.color ?? customNextButtonBackgroundColor,
+						onColorChange: (value) => {
+							setNextButtonBackgroundColor(value);
+							setAttributes({ customNextButtonBackgroundColor: value });
+						},
 						label: __('Next Button Background'),
 					},
 					{
-						colorValue: nextButtonTextColor?.color,
-						onColorChange: setNextButtonTextColor,
+						colorValue: nextButtonTextColor?.color ?? customNextButtonTextColor,
+						onColorChange: (value) => {
+							setNextButtonTextColor(value);
+							setAttributes({ customNextButtonTextColor: value });
+						},
 						label: __('Next Button Text'),
 					},
 					{
-						colorValue: nextButtonBoxShadowColor?.color,
-						onColorChange: setNextButtonBoxShadowColor,
+						colorValue: nextButtonBoxShadowColor?.color ?? customNextButtonBoxShadowColor,
+						onColorChange: (value) => {
+							setNextButtonBoxShadowColor(value);
+							setAttributes({ customNextButtonBoxShadowColor: value });
+						},
 						label: __('Next Button Box Shadow'),
 					},
 				] }

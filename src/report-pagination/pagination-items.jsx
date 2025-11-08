@@ -7,7 +7,6 @@ import classNames from 'classnames';
  * WordPress Dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { getColorClassName } from '@wordpress/block-editor';
 
 export default function PaginationItems({
 	paginationItems,
@@ -28,34 +27,6 @@ export default function PaginationItems({
 				const className = classNames(
 					'common-block-style__pagination__page-numbers',
 					{
-						'has-text-color':
-							!!textColor.color || !!textColor?.class,
-						[getColorClassName('color', textColor?.slug)]:
-							!!textColor?.slug,
-						'has-background':
-							!!backgroundColor.color || backgroundColor.class,
-						[getColorClassName(
-							'background-color',
-							backgroundColor?.slug
-						)]: !!backgroundColor?.slug,
-						'has-border-color':
-							!!borderColor.color || borderColor.class,
-						[getColorClassName('border-color', borderColor?.slug)]:
-							!!borderColor?.slug,
-						'has-hover-background':
-							!!hoverBackgroundColor.color ||
-							hoverBackgroundColor.class,
-						[getColorClassName(
-							'hover-background-color',
-							hoverBackgroundColor?.slug
-						)]: !!hoverBackgroundColor?.slug,
-						'has-active-background':
-							!!activeBackgroundColor.color ||
-							activeBackgroundColor.class,
-						[getColorClassName(
-							'active-background-color',
-							activeBackgroundColor?.slug
-						)]: !!activeBackgroundColor?.slug,
 						'is-active': isActive,
 					}
 				);

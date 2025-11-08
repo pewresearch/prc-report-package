@@ -1,5 +1,52 @@
-.wp-block-prc-block-report-materials {
-	.wp-block-prc-block-report-materials__list {
-		gap: var(--block-gap);
+.wp-block-prc-block-report-materials__list {
+	--padding: 0.48em;
+	margin-top: 0 !important;
+	margin-bottom: 0 !important;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	padding: var(--padding);
+	gap: var(--block-gap);
+
+	&:empty {
+		display: none !important;
+	}
+
+	li {
+		padding: var(--padding);
+		display: flex;
+		gap: 0.5em;
+
+		&.flex-align-center {
+			align-items: center;
+		}
+
+		a:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
+// List item hover and active states using CSS custom properties
+.wp-block-prc-block-report-materials__list-item {
+	&:hover {
+		background-color: var(--hover-background-color);
+		color: var(--hover-text-color);
+
+		> a,
+		> span {
+			color: var(--hover-text-color);
+		}
+	}
+
+	&:active,
+	&:focus {
+		background-color: var(--active-background-color);
+		color: var(--active-text-color);
+
+		> a,
+		> span {
+			color: var(--active-text-color);
+		}
 	}
 }

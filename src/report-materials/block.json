@@ -7,37 +7,29 @@
 	"category": "theme",
 	"description": "Displays a list of all materials from a post report package.",
 	"attributes": {
-		"headingBackgroundColor": {
-			"type": "string",
-			"default": "ui-black"
-		},
-		"headingTextColor": {
-			"type": "string",
-			"default": "ui-white"
-		},
 		"hoverBackgroundColor": {
-			"type": "string",
-			"default": "ui-beige-very-light"
+			"type": "string"
 		},
 		"hoverTextColor": {
-			"type": "string",
-			"default": "ui-black"
+			"type": "string"
+		},
+		"customHoverBackgroundColor": {
+			"type": "string"
+		},
+		"customHoverTextColor": {
+			"type": "string"
 		},
 		"activeBackgroundColor": {
-			"type": "string",
-			"default": "ui-gray-very-light"
+			"type": "string"
 		},
 		"activeTextColor": {
-			"type": "string",
-			"default": "ui-black"
+			"type": "string"
 		},
-		"heading": {
-			"type": "string",
-			"default": "Report Materials"
+		"customActiveBackgroundColor": {
+			"type": "string"
 		},
-		"hideHeading": {
-			"type": "boolean",
-			"default": false
+		"customActiveTextColor": {
+			"type": "string"
 		},
 		"style": {
 			"type": "object",
@@ -57,16 +49,14 @@
 			"link": true
 		},
 		"spacing": {
-			"margin": ["top", "bottom", "left", "right"],
-			"blockGap": true,
-			"__experimentalDefaultControls": {
-				"margin": true,
-				"blockGap": true
-			}
+			"margin": true,
+			"padding": true,
+			"blockGap": true
 		},
 		"typography": {
 			"__experimentalFontFamily": true,
 			"fontSize": true,
+			"lineHeight": true,
 			"__experimentalDefaultControls": {
 				"__experimentalFontFamily": true
 			}
@@ -76,9 +66,5 @@
 	"textdomain": "report-materials",
 	"editorScript": "file:./index.js",
 	"editorStyle": "file:./index.css",
-	"style": [
-		"file:./style-index.css",
-		"prc-block-library--baseball-card",
-		"prc-block-library--additional-color-supports"
-	]
+	"style": "file:./style-index.css"
 }

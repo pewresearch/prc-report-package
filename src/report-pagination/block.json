@@ -8,44 +8,58 @@
 	"description": "Provides a stylized pagination for use with reports",
 	"attributes": {
 		"backgroundColor": {
-			"type": "string",
-			"default": "white"
+			"type": "string"
 		},
 		"textColor": {
-			"type": "string",
-			"default": "white"
+			"type": "string"
 		},
 		"itemBackgroundColor": {
-			"type": "string",
-			"default": "white"
+			"type": "string"
+		},
+		"customItemBackgroundColor": {
+			"type": "string"
 		},
 		"itemTextColor": {
-			"type": "string",
-			"default": "ui-black"
+			"type": "string"
+		},
+		"customItemTextColor": {
+			"type": "string"
 		},
 		"itemBorderColor": {
-			"type": "string",
-			"default": "gray"
+			"type": "string"
+		},
+		"customItemBorderColor": {
+			"type": "string"
 		},
 		"itemHoverBackgroundColor": {
-			"type": "string",
-			"default": "ui-beige-very-light"
+			"type": "string"
+		},
+		"customItemHoverBackgroundColor": {
+			"type": "string"
 		},
 		"itemActiveBackgroundColor": {
-			"type": "string",
-			"default": "white"
+			"type": "string"
+		},
+		"customItemActiveBackgroundColor": {
+			"type": "string"
 		},
 		"nextButtonBackgroundColor": {
-			"type": "string",
-			"default": "ui-beige-very-light"
+			"type": "string"
+		},
+		"customNextButtonBackgroundColor": {
+			"type": "string"
 		},
 		"nextButtonTextColor": {
-			"type": "string",
-			"default": "ui-black"
+			"type": "string"
+		},
+		"customNextButtonTextColor": {
+			"type": "string"
 		},
 		"nextButtonBoxShadowColor": {
-			"type": "string",
-			"default": "gray-alt"
+			"type": "string"
+		},
+		"customNextButtonBoxShadowColor": {
+			"type": "string"
 		}
 	},
 	"supports": {

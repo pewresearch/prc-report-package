@@ -57,6 +57,7 @@ export default function useReportMaterials( { postId, postType } ) {
 	}, [record, isResolving]);
 
 	console.log('useReportMaterials', postId, postType, reportMaterials);
+
 	return {
 		parentId,
 		parentTitle,

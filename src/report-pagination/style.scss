@@ -19,8 +19,27 @@
 		align-items: center;
 		justify-content: center;
 		box-sizing: border-box;
+		background-color: var(--next-button-background-color);
+		color: var(--next-button-text-color);
+		box-shadow: inset 0 3px 4px -2px var(--next-button-box-shadow-color);
 		&:hover {
 			opacity: 0.65;
+		}
+	}
+
+	.common-block-style__pagination__pagination-numbers {
+		.common-block-style__pagination__page-numbers {
+			background-color: var(--item-background-color);
+			color: var(--item-text-color);
+			border-color: var(--item-border-color);
+
+			&:hover {
+				background-color: var(--item-hover-background-color);
+			}
+
+			&.is-active {
+				background-color: var(--item-active-background-color);
+			}
 		}
 	}
 }

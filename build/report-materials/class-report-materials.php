@@ -116,6 +116,38 @@ class Report_Materials {
 	}
 
 	/**
+	 * Generate CSS custom properties for color styles
+	 *
+	 * @param array $attributes Block attributes
+	 * @return string CSS string with color custom properties
+	 */
+	private function generate_styles( array $attributes ): string {
+		$hover_bg    = $attributes['customHoverBackgroundColor'] ?? '';
+		$hover_text  = $attributes['customHoverTextColor'] ?? '';
+		$active_bg   = $attributes['customActiveBackgroundColor'] ?? '';
+		$active_text = $attributes['customActiveTextColor'] ?? '';
+		$block_gap   = \PRC\Platform\Block_Utils\get_block_gap_support_value( $attributes );
+
+		$styles = array(
+			'--hover-background-color'  => $hover_bg,
+			'--hover-text-color'        => $hover_text,
+			'--active-background-color' => $active_bg,
+			'--active-text-color'       => $active_text,
+			'--block-gap'               => $block_gap,
+		);
+
+		$style_string = array_map(
+			static function ( string $key, string $value ): string {
+				return ! empty( $value ) ? $key . ': ' . $value . ';' : '';
+			},
+			array_keys( $styles ),
+			$styles
+		);
+
+		return implode( ' ', array_filter( $style_string ) );
+	}
+
+	/**
 	 * Render the block
 	 *
 	 * @param mixed $attributes Block attributes.
@@ -135,18 +167,13 @@ class Report_Materials {
 			return '';
 		}
 
-		$color_supports = new \PRC\Platform\Blocks\Additional_Color_Supports( null );
-
-		$heading_text = array_key_exists( 'heading', $attributes ) ? $attributes['heading'] : false;
-
-		$list_item_classnames = $color_supports->get_list_classnames(
-			'wp-block-prc-block-table-of-materials',
-			false,
-			$attributes,
-		) . ' flex-align-center';
+		$list_item_classnames = 'wp-block-prc-block-report-materials__list-item flex-align-center';
 
 		foreach ( $materials as $material ) {
-			$icon     = \PRC\Platform\Icons\render( 'solid', $this->get_item_icon( $material ) );
+			$icon     = \PRC\Platform\Icons\render(
+				'solid',
+				$this->get_item_icon( $material )
+			);
 			$content .= wp_sprintf(
 				'<li class="%1$s" data-material-type="%2$s">%3$s<a href="%4$s" target="_blank">%5$s</a></li>',
 				$list_item_classnames,
@@ -159,39 +186,26 @@ class Report_Materials {
 
 		$block_attrs = get_block_wrapper_attributes(
 			array(
-				'class' => 'common-block-style--baseball-card',
+				'class' => 'wp-block-prc-block-report-materials__list',
+				'role'  => 'list',
 			)
 		);
 
-		$block_gap = \PRC\Platform\Block_Utils\get_block_gap_support_value( $attributes );
-
-		$heading = wp_sprintf(
-			'<div class="%1$s"><h2>%2$s</h2></div>',
-			\PRC\Platform\Block_Utils\classNames(
-				'wp-block-prc-block-table-of-contents__heading',
-				array(
-					'has-text-color' => $attributes['headingTextColor'],
-					'has-' . $attributes['headingTextColor'] . '-color' => $attributes['headingTextColor'],
-					'has-background' => $attributes['headingBackgroundColor'],
-					'has-' . $attributes['headingBackgroundColor'] . '-background-color' => $attributes['headingBackgroundColor'],
-					'is-hidden'      => true === $attributes['hideHeading'],
-				),
-			),
-			$heading_text,
-		);
-
-		$list = wp_sprintf(
-			'<ul class="wp-block-prc-block-report-materials__list" role="list" %1$s>%2$s</ul>',
-			'style="--block-gap: ' . $block_gap . ';"',
-			$content,
-		);
-
-		return wp_sprintf(
-			'<div %1$s>%2$s %3$s</div>',
+		$output = wp_sprintf(
+			'<ul %1$s>%2$s</ul>',
 			$block_attrs,
-			$heading,
-			$list
+			$content
 		);
+
+		// Use WP_HTML_Tag_Processor to append color styles to existing style attribute
+		$tag_processor = new \WP_HTML_Tag_Processor( $output );
+		if ( $tag_processor->next_tag( array( 'class_name' => 'wp-block-prc-block-report-materials' ) ) ) {
+			$style  = (string) $tag_processor->get_attribute( 'style' );
+			$style .= ' ' . $this->generate_styles( $attributes );
+			$tag_processor->set_attribute( 'style', $style );
+		}
+
+		return $tag_processor->get_updated_html();
 	}
 
 	/**

@@ -10,37 +10,29 @@ return array(
 		'category' => 'theme',
 		'description' => 'Displays a list of all materials from a post report package.',
 		'attributes' => array(
-			'headingBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'ui-black'
-			),
-			'headingTextColor' => array(
-				'type' => 'string',
-				'default' => 'ui-white'
-			),
 			'hoverBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'ui-beige-very-light'
+				'type' => 'string'
 			),
 			'hoverTextColor' => array(
-				'type' => 'string',
-				'default' => 'ui-black'
+				'type' => 'string'
+			),
+			'customHoverBackgroundColor' => array(
+				'type' => 'string'
+			),
+			'customHoverTextColor' => array(
+				'type' => 'string'
 			),
 			'activeBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'ui-gray-very-light'
+				'type' => 'string'
 			),
 			'activeTextColor' => array(
-				'type' => 'string',
-				'default' => 'ui-black'
+				'type' => 'string'
 			),
-			'heading' => array(
-				'type' => 'string',
-				'default' => 'Report Materials'
+			'customActiveBackgroundColor' => array(
+				'type' => 'string'
 			),
-			'hideHeading' => array(
-				'type' => 'boolean',
-				'default' => false
+			'customActiveTextColor' => array(
+				'type' => 'string'
 			),
 			'style' => array(
 				'type' => 'object',
@@ -60,21 +52,14 @@ return array(
 				'link' => true
 			),
 			'spacing' => array(
-				'margin' => array(
-					'top',
-					'bottom',
-					'left',
-					'right'
-				),
-				'blockGap' => true,
-				'__experimentalDefaultControls' => array(
-					'margin' => true,
-					'blockGap' => true
-				)
+				'margin' => true,
+				'padding' => true,
+				'blockGap' => true
 			),
 			'typography' => array(
 				'__experimentalFontFamily' => true,
 				'fontSize' => true,
+				'lineHeight' => true,
 				'__experimentalDefaultControls' => array(
 					'__experimentalFontFamily' => true
 				)
@@ -87,11 +72,7 @@ return array(
 		'textdomain' => 'report-materials',
 		'editorScript' => 'file:./index.js',
 		'editorStyle' => 'file:./index.css',
-		'style' => array(
-			'file:./style-index.css',
-			'prc-block-library--baseball-card',
-			'prc-block-library--additional-color-supports'
-		)
+		'style' => 'file:./style-index.css'
 	),
 	'report-pagination' => array(
 		'$schema' => 'https://schemas.wp.org/trunk/block.json',
@@ -103,44 +84,58 @@ return array(
 		'description' => 'Provides a stylized pagination for use with reports',
 		'attributes' => array(
 			'backgroundColor' => array(
-				'type' => 'string',
-				'default' => 'white'
+				'type' => 'string'
 			),
 			'textColor' => array(
-				'type' => 'string',
-				'default' => 'white'
+				'type' => 'string'
 			),
 			'itemBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'white'
+				'type' => 'string'
+			),
+			'customItemBackgroundColor' => array(
+				'type' => 'string'
 			),
 			'itemTextColor' => array(
-				'type' => 'string',
-				'default' => 'ui-black'
+				'type' => 'string'
+			),
+			'customItemTextColor' => array(
+				'type' => 'string'
 			),
 			'itemBorderColor' => array(
-				'type' => 'string',
-				'default' => 'gray'
+				'type' => 'string'
+			),
+			'customItemBorderColor' => array(
+				'type' => 'string'
 			),
 			'itemHoverBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'ui-beige-very-light'
+				'type' => 'string'
+			),
+			'customItemHoverBackgroundColor' => array(
+				'type' => 'string'
 			),
 			'itemActiveBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'white'
+				'type' => 'string'
+			),
+			'customItemActiveBackgroundColor' => array(
+				'type' => 'string'
 			),
 			'nextButtonBackgroundColor' => array(
-				'type' => 'string',
-				'default' => 'ui-beige-very-light'
+				'type' => 'string'
+			),
+			'customNextButtonBackgroundColor' => array(
+				'type' => 'string'
 			),
 			'nextButtonTextColor' => array(
-				'type' => 'string',
-				'default' => 'ui-black'
+				'type' => 'string'
+			),
+			'customNextButtonTextColor' => array(
+				'type' => 'string'
 			),
 			'nextButtonBoxShadowColor' => array(
-				'type' => 'string',
-				'default' => 'gray-alt'
+				'type' => 'string'
+			),
+			'customNextButtonBoxShadowColor' => array(
+				'type' => 'string'
 			)
 		),
 		'supports' => array(

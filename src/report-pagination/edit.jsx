@@ -16,6 +16,7 @@ import Controls from './controls';
 import NextPostButton from './next-post-button';
 import NextPrevButton from './next-prev-button';
 import PaginationItems from './pagination-items';
+import StyleEngine from './style-engine';
 
 /**
  * The edit function describes the structure of your block in the context of the
@@ -85,6 +86,8 @@ function Edit({
 		<Fragment>
 			<Controls
 				{...{
+					attributes,
+					setAttributes,
 					colors: {
 						itemBackgroundColor,
 						setItemBackgroundColor,
@@ -103,6 +106,12 @@ function Edit({
 						nextButtonBoxShadowColor,
 						setNextButtonBoxShadowColor,
 					},
+					clientId,
+				}}
+			/>
+			<StyleEngine
+				{...{
+					attributes,
 					clientId,
 				}}
 			/>
@@ -159,5 +168,13 @@ export default withColors(
 	{ itemActiveBackgroundColor: 'color' },
 	{ nextButtonBackgroundColor: 'color' },
 	{ nextButtonTextColor: 'color' },
-	{ nextButtonBoxShadowColor: 'color' }
+	{ nextButtonBoxShadowColor: 'color' },
+	'customItemBackgroundColor',
+	'customItemTextColor',
+	'customItemBorderColor',
+	'customItemHoverBackgroundColor',
+	'customItemActiveBackgroundColor',
+	'customNextButtonBackgroundColor',
+	'customNextButtonTextColor',
+	'customNextButtonBoxShadowColor'
 )(Edit);
