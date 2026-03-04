@@ -8,10 +8,11 @@ import { Popover, SelectControl } from '@wordpress/components';
  */
 import types from './types.json';
 
-const TypeSelect = ({ type = null, onChange, toggleVisibility }) => {
+const TypeSelect = ({ type = null, onChange, toggleVisibility, anchor }) => {
 	const { options } = types;
 	return (
 		<Popover
+			anchor={anchor}
 			className="prc-report-material-popover"
 			noArrow={false}
 			placement="left-start"

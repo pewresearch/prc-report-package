@@ -62,6 +62,9 @@ class Relationship_Manager {
 		if ( ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES ) ) {
 			return;
 		}
+		if ( get_post_meta( $post->ID, '_prc_fork_parent', true ) ) {
+			return;
+		}
 		$parent_post_id = wp_get_post_parent_id( $post->ID );
 		// If this is a child post, return early.
 		if ( 0 !== $parent_post_id ) {
@@ -151,6 +154,9 @@ class Relationship_Manager {
 	 */
 	public function set_child_posts( $post ) {
 		if ( ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES ) && 0 !== wp_get_post_parent_id( $post->ID ) ) {
+			return;
+		}
+		if ( get_post_meta( $post->ID, '_prc_fork_parent', true ) ) {
 			return;
 		}
 		$errors   = array();

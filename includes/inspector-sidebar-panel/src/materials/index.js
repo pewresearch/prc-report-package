@@ -8,7 +8,7 @@ import { LoadingIndicator } from '@prc/components';
  * WordPress Dependencies
  */
 import { __ } from '@wordpress/i18n';
-import { useState, Fragment } from '@wordpress/element';
+import { useState, Fragment, useRef } from '@wordpress/element';
 import { Button, PanelBody } from '@wordpress/components';
 
 /**
@@ -21,17 +21,11 @@ import { TypeSelect, getLabel } from './type-select';
 
 export default function MaterialsPanel() {
 	const [popoverVisible, toggleVisibility] = useState(false);
+	const addButtonRef = useRef(null);
 
 	const ITEMS_TYPE = 'materials';
-	const {
-		materials,
-		reorder,
-		append,
-		remove,
-		updateItem,
-		isResolving,
-		allowEditing,
-	} = usePostReportPackage();
+	const { materials, reorder, append, isResolving, allowEditing } =
+		usePostReportPackage();
 
 	return (
 		<PanelBody title="Materials">
@@ -65,6 +59,7 @@ export default function MaterialsPanel() {
 						)}
 					/>
 					<Button
+						ref={addButtonRef}
 						variant="primary"
 						disabled={!allowEditing}
 						onClick={() => {
@@ -75,6 +70,7 @@ export default function MaterialsPanel() {
 					</Button>
 					{popoverVisible && (
 						<TypeSelect
+							anchor={addButtonRef.current}
 							onChange={(t) => {
 								const args = {
 									type: t,

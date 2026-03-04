@@ -6,10 +6,11 @@ import { useStyleOverride } from '@wordpress/block-editor';
 /**
  * Gets the color styles for the report-pagination block.
  *
- * @param {Object} attributes Block attributes
- * @returns {Object} Color variable map
+ * @param {Object} options            - Options object.
+ * @param {Object} options.attributes - Block attributes.
+ * @return {Object} Color variable map
  */
-function getColorStyles({ attributes }) {
+function getColorStyles({ attributes } = {}) {
 	const {
 		customItemBackgroundColor,
 		customItemTextColor,
@@ -35,12 +36,20 @@ function getColorStyles({ attributes }) {
 	const colorVarMap = {
 		'--item-background-color': getColorValue(customItemBackgroundColor),
 		'--item-text-color': getColorValue(customItemTextColor),
-		'--item-border-color': getColorValue(customItemBorderColor),
-		'--item-hover-background-color': getColorValue(customItemHoverBackgroundColor),
-		'--item-active-background-color': getColorValue(customItemActiveBackgroundColor),
-		'--next-button-background-color': getColorValue(customNextButtonBackgroundColor),
+		'--item-brdr-color': getColorValue(customItemBorderColor),
+		'--item-hover-background-color': getColorValue(
+			customItemHoverBackgroundColor
+		),
+		'--item-active-background-color': getColorValue(
+			customItemActiveBackgroundColor
+		),
+		'--next-button-background-color': getColorValue(
+			customNextButtonBackgroundColor
+		),
 		'--next-button-text-color': getColorValue(customNextButtonTextColor),
-		'--next-button-box-shadow-color': getColorValue(customNextButtonBoxShadowColor),
+		'--next-button-box-shadow-color': getColorValue(
+			customNextButtonBoxShadowColor
+		),
 	};
 
 	return colorVarMap;
@@ -52,13 +61,9 @@ function getColorStyles({ attributes }) {
  * @param {Object} props
  * @param {Object} props.attributes Block attributes
  * @param {string} props.clientId   Block client ID
- * @returns {null} No UI output
+ * @return {null} No UI output
  */
 export default function StyleEngine({ attributes, clientId }) {
-	if (!clientId) {
-		return null;
-	}
-
 	const colorVarMap = getColorStyles({ attributes });
 
 	const declarations = Object.entries(colorVarMap)
@@ -66,11 +71,12 @@ export default function StyleEngine({ attributes, clientId }) {
 		.map(([name, value]) => `\t${name}: ${value};`)
 		.join('\n');
 
-	if (declarations.length) {
-		useStyleOverride({
-			css: `#block-${clientId} {\n${declarations}\n}`,
-		});
-	}
+	const css =
+		clientId && declarations.length
+			? `#block-${clientId} {\n${declarations}\n}`
+			: '';
+
+	useStyleOverride({ css });
 
 	return null;
 }

@@ -76,6 +76,7 @@ class Plugin {
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-rest-api.php';
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-relationship-manager.php';
 		require_once plugin_dir_path( __DIR__ ) . '/includes/class-wp-admin.php';
+		require_once plugin_dir_path( __DIR__ ) . '/includes/class-distributor.php';
 	}
 
 	/**
@@ -88,6 +89,7 @@ class Plugin {
 		new Rest_API( $this->get_loader() );
 		new Relationship_Manager( $this->get_loader() );
 		new WP_Admin( $this->get_loader() );
+		new Distributor( $this->get_loader() );
 
 		// Initialize blocks.
 		wp_register_block_metadata_collection(
@@ -95,12 +97,17 @@ class Plugin {
 			plugin_dir_path( __DIR__ ) . 'build/blocks-manifest.php'
 		);
 
-		// Load block classes.
+		// Load block classes if the function exists.
+		if ( ! function_exists( '\PRC\Platform\Block_Utils\load_blocks' ) ) {
+			return;
+		}
 		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_REPORT_PACKAGE_DIR );
 		if ( ! is_wp_error( $blocks_loaded ) ) {
 			new Report_Materials( $this->get_loader() );
 			new Report_Pagination( $this->get_loader() );
 		}
+
+		$this->register_schema_seo_filters();
 	}
 
 	/**
@@ -141,5 +148,32 @@ class Plugin {
 	 */
 	public function get_version() {
 		return $this->version;
+	}
+
+	/**
+	 * Register schema SEO filters.
+	 */
+	public function register_schema_seo_filters() {
+		// Register schema SEO filter for report packages.
+		// $this->loader->add_filter( 'prc_schema_seo_schema_type_default', $this, 'set_report_package_schema_type', 20, 3 );
+	}
+
+	/**
+	 * Set multi-section report posts to use Report schema type.
+	 *
+	 * @hook prc_schema_seo_schema_type_default
+	 *
+	 * @param string $schema_type The default schema type.
+	 * @param string $post_type   The post type.
+	 * @param int    $post_id     The post ID.
+	 * @return string The schema type.
+	 */
+	public function set_report_package_schema_type( $schema_type, $post_type, $post_id ) {
+		if ( 'post' === $post_type && $post_id ) {
+			if ( is_report_package( $post_id ) ) {
+				return 'Report';
+			}
+		}
+		return $schema_type;
 	}
 }

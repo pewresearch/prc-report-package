@@ -57,7 +57,6 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 	// @TODO: Change to package_materials
 	const [materials, _setMaterials] = useState(null);
 	const _materials = useDebounce(materials, 100);
-	const setMaterials = (value) => _setMaterials(value);
 	useEffect(() => {
 		if (null === _materials && meta?.reportMaterials !== undefined) {
 			_setMaterials(meta.reportMaterials);
@@ -65,12 +64,11 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		if (_materials !== null && meta?.reportMaterials !== _materials) {
 			setMeta({ ...meta, reportMaterials: _materials });
 		}
-	}, [_materials, meta]);
+	}, [_materials, meta, setMeta]);
 	// Package Chapters
 	// @TODO: Change to package_chapters
 	const [chapters, _setChapters] = useState(null);
 	const _chapters = useDebounce(chapters, 100);
-	const setChapters = (value) => _setChapters(value);
 	useEffect(() => {
 		if (null === _chapters && meta?.multiSectionReport !== undefined) {
 			_setChapters(meta.multiSectionReport);
@@ -78,11 +76,10 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		if (_chapters !== null && meta?.multiSectionReport !== _chapters) {
 			setMeta({ ...meta, multiSectionReport: _chapters });
 		}
-	}, [_chapters, meta]);
+	}, [_chapters, meta, setMeta]);
 	// Package Parts
 	const [parts, _setParts] = useState(null);
 	const _parts = useDebounce(parts, 100);
-	const setParts = (value) => _setParts(value);
 	useEffect(() => {
 		if (null === _parts && meta?.package_parts !== undefined) {
 			_setParts(meta.package_parts);
@@ -90,7 +87,7 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		if (_parts !== null && meta?.package_parts !== _parts) {
 			setMeta({ ...meta, package_parts: _parts });
 		}
-	}, [_parts, meta]);
+	}, [_parts, meta, setMeta]);
 	// Enable Parts (flag)
 	const [_enableParts, setEnableParts] = useState(null);
 	const enableParts = useDebounce(_enableParts, 150);
@@ -112,7 +109,7 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		) {
 			setMeta({ ...meta, package_parts__enabled: enableParts });
 		}
-	}, [enableParts, meta]);
+	}, [enableParts, meta, setMeta]);
 
 	const parentPost = useMemo(() => {
 		if (isResolving || !record) {
@@ -142,45 +139,40 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		return null !== chapters && chapters.length > 0;
 	}, [chapters]);
 
-	const getLatestStateByItemType = useCallback(
-		(itemsType = 'materials') => {
-			if ('materials' === itemsType) {
-				return [...materials];
-			} else if ('chapters' === itemsType) {
-				return [...chapters];
-			} else if ('parts' === itemsType) {
-				return [...parts];
-			}
-			return [];
-		},
-		[materials, chapters, parts]
-	);
+	/**
+	 * Returns the correct state setter for the given item type.
+	 */
+	const getSetterByItemType = useCallback((itemsType) => {
+		if ('materials' === itemsType) {
+			return _setMaterials;
+		} else if ('chapters' === itemsType) {
+			return _setChapters;
+		} else if ('parts' === itemsType) {
+			return _setParts;
+		}
+		return null;
+	}, []);
 
 	const reorder = useCallback(
 		(oldIndex, newIndex, itemsType = 'materials') => {
 			if (!allowEditing) {
 				return;
 			}
-			const newItems = getLatestStateByItemType(itemsType);
-
-			// Do reordering.
-			const item = newItems[oldIndex];
-			newItems.splice(oldIndex, 1);
-			newItems.splice(newIndex, 0, item);
-
-			let fn = () =>
-				console.log('reorder', oldIndex, newIndex, itemsType);
-			if ('materials' === itemsType) {
-				fn = setMaterials;
-			} else if ('chapters' === itemsType) {
-				fn = setChapters;
-			} else if ('parts' === itemsType) {
-				fn = setParts;
+			const setter = getSetterByItemType(itemsType);
+			if (!setter) {
+				return;
 			}
-
-			fn(newItems);
+			setter((prevItems) => {
+				if (!prevItems) {
+					return prevItems;
+				}
+				const newItems = [...prevItems];
+				const [item] = newItems.splice(oldIndex, 1);
+				newItems.splice(newIndex, 0, item);
+				return newItems;
+			});
 		},
-		[allowEditing, getLatestStateByItemType]
+		[allowEditing, getSetterByItemType]
 	);
 
 	const append = useCallback(
@@ -188,25 +180,14 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 			if (!allowEditing) {
 				return;
 			}
-			const newItems = getLatestStateByItemType(itemsType);
-
-			const obj = {
-				key,
-			};
-			Object.assign(obj, value);
-			newItems.push(obj);
-
-			let fn;
-			if ('materials' === itemsType) {
-				fn = setMaterials;
-			} else if ('chapters' === itemsType) {
-				fn = setChapters;
-			} else if ('parts' === itemsType) {
-				fn = setParts;
+			const setter = getSetterByItemType(itemsType);
+			if (!setter) {
+				return;
 			}
-			fn(newItems);
+			const obj = { key, ...value };
+			setter((prevItems) => [...(prevItems || []), obj]);
 		},
-		[allowEditing, getLatestStateByItemType]
+		[allowEditing, getSetterByItemType]
 	);
 
 	const remove = useCallback(
@@ -214,22 +195,18 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 			if (!allowEditing) {
 				return;
 			}
-			const newItems = getLatestStateByItemType(itemsType);
-
-			newItems.splice(index, 1);
-
-			let fn = () => console.log('remove', index, itemsType);
-			if ('materials' === itemsType) {
-				fn = setMaterials;
-			} else if ('chapters' === itemsType) {
-				fn = setChapters;
-			} else if ('parts' === itemsType) {
-				fn = setParts;
+			const setter = getSetterByItemType(itemsType);
+			if (!setter) {
+				return;
 			}
-
-			fn(newItems);
+			setter((prevItems) => {
+				if (!prevItems) {
+					return prevItems;
+				}
+				return prevItems.filter((_, i) => i !== index);
+			});
 		},
-		[allowEditing, getLatestStateByItemType]
+		[allowEditing, getSetterByItemType]
 	);
 
 	const updateItem = useCallback(
@@ -237,23 +214,25 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 			if (!allowEditing) {
 				return;
 			}
-			const newItems = getLatestStateByItemType(itemsType);
-
-			newItems[index][valueKey] = value;
-
-			let fn = () =>
-				console.log('updateItem', index, valueKey, value, itemsType);
-			if ('materials' === itemsType) {
-				fn = setMaterials;
-			} else if ('chapters' === itemsType) {
-				fn = setChapters;
-			} else if ('parts' === itemsType) {
-				fn = setParts;
+			const setter = getSetterByItemType(itemsType);
+			if (!setter) {
+				return;
 			}
-
-			fn(newItems);
+			// Use a functional updater so that rapid successive calls
+			// (e.g. "Change Type" updating type, url, label, icon in one click)
+			// each see the result of the previous update instead of stale state.
+			// Spread each item to create new object references so that
+			// WordPress core-data properly detects the meta change as dirty.
+			setter((prevItems) => {
+				if (!prevItems) {
+					return prevItems;
+				}
+				return prevItems.map((item, i) =>
+					i === index ? { ...item, [valueKey]: value } : item
+				);
+			});
 		},
-		[allowEditing, getLatestStateByItemType]
+		[allowEditing, getSetterByItemType]
 	);
 
 	return {

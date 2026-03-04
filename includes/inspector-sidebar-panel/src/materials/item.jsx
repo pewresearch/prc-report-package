@@ -8,18 +8,23 @@
  */
 import { __ } from '@wordpress/i18n';
 import { Fragment, useState } from '@wordpress/element';
-import { useDispatch } from '@wordpress/data';
 import {
 	Button,
-	ButtonGroup,
+	__experimentalHStack as HStack,
+	__experimentalVStack as VStack,
 	SelectControl,
 	TextControl,
 } from '@wordpress/components';
+import { upload, connection } from '@wordpress/icons';
 import { MediaUpload, MediaUploadCheck } from '@wordpress/block-editor';
+import apiFetch from '@wordpress/api-fetch';
+import { dispatch } from '@wordpress/data';
+import { store as noticesStore } from '@wordpress/notices';
 
 /**
  * Internal Dependencies
  */
+import { AISuggestButton } from '@prc/components';
 import { TypeSelect, getLabel, getOptions } from './type-select';
 import { usePostReportPackage } from '../context';
 import ListItem from '../list-item';
@@ -33,31 +38,73 @@ const ALLOWED_MEDIA_TYPES = [
 	'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 ];
 
-const ICONS = {
-	detailedTable: 'editor-table',
-	link: 'admin-links',
-	presentation: 'format-gallery',
-	pressRelease: 'media-document',
-	promo: 'star-empty',
-	qA: 'clipboard',
-	questionnaire: 'editor-help',
-	report: 'analytics',
-	supplemental: 'welcome-add-page',
-	topline: 'editor-ul',
-};
+// Types that support each field, used when changing type to determine which
+// fields to clear vs. preserve.
+const TYPES_WITH_LABEL = ['link', 'promo', 'qA', 'supplemental', 'video'];
+const TYPES_WITH_ICON_SELECT = ['link'];
+const TYPES_WITH_FILE_UPLOAD = [
+	'report',
+	'questionnaire',
+	'detailedTable',
+	'powerpoint',
+	'presentation',
+	'pressRelease',
+	'topline',
+];
+const TYPES_WITH_ICON_UPLOAD = ['promo'];
+const TYPES_WITH_ATTACHMENT = [
+	...TYPES_WITH_FILE_UPLOAD,
+	...TYPES_WITH_ICON_UPLOAD,
+];
 
 const Item = ({ type, url, attachmentId, label, icon, index }) => {
 	const ITEMS_TYPE = 'materials';
-	const { allowEditing, updateItem, remove } = usePostReportPackage();
+	const { allowEditing, updateItem, remove, parentId } =
+		usePostReportPackage();
 	const [popoverVisible, toggleVisibility] = useState(false);
+	const [isConverting, setIsConverting] = useState(false);
+
+	const handleConvertTopline = async () => {
+		if (!parentId || !attachmentId) {
+			return;
+		}
+		setIsConverting(true);
+		try {
+			await apiFetch({
+				path: '/prc-pdf-extraction/v1/convert',
+				method: 'POST',
+				data: {
+					post_id: parentId,
+					attachment_id: attachmentId,
+				},
+			});
+			dispatch(noticesStore).createNotice(
+				'info',
+				__('Topline extraction is being processed in the background.'),
+				{ type: 'snackbar', isDismissible: true }
+			);
+		} catch (error) {
+			dispatch(noticesStore).createNotice(
+				'error',
+				__('Failed to start topline extraction. Please try again.'),
+				{ type: 'snackbar', isDismissible: true }
+			);
+		} finally {
+			setIsConverting(false);
+		}
+	};
 
 	const UploadFileButton = ({ title, value }) => {
 		return (
 			<MediaUploadCheck>
 				<MediaUpload
-					title={__(
-						'' === value ? `Upload ${title}` : `Change ${title}`
-					)}
+					title={
+						(value === '' || value === null
+							? __('Upload')
+							: __('Change')) +
+						' ' +
+						title
+					}
 					allowedTypes={ALLOWED_MEDIA_TYPES}
 					value={value}
 					onSelect={(img) => {
@@ -68,15 +115,20 @@ const Item = ({ type, url, attachmentId, label, icon, index }) => {
 						return (
 							<Button
 								variant="secondary"
+								icon={upload}
+								label={
+									value === null || value === ''
+										? __('Upload File')
+										: __('Change File')
+								}
+								text={
+									value === null || value === ''
+										? __('Upload')
+										: __('Change')
+								}
 								disabled={!allowEditing}
 								onClick={open}
-							>
-								{__(
-									null === value
-										? `Upload File`
-										: `Change File`
-								)}
-							</Button>
+							/>
 						);
 					}}
 				/>
@@ -88,9 +140,13 @@ const Item = ({ type, url, attachmentId, label, icon, index }) => {
 		return (
 			<MediaUploadCheck>
 				<MediaUpload
-					title={__(
-						null === value ? `Upload ${title}` : `Change ${title}`
-					)}
+					title={
+						(value === null || value === ''
+							? __('Upload')
+							: __('Change')) +
+						' ' +
+						title
+					}
 					value={value}
 					onSelect={(img) => {
 						updateItem(index, 'icon', img.url, ITEMS_TYPE);
@@ -100,15 +156,20 @@ const Item = ({ type, url, attachmentId, label, icon, index }) => {
 						return (
 							<Button
 								variant="secondary"
+								icon={upload}
+								label={
+									value === null || value === ''
+										? __('Upload Icon')
+										: __('Change Icon')
+								}
+								text={
+									value === null || value === ''
+										? __('Upload')
+										: __('Change')
+								}
 								disabled={!allowEditing}
 								onClick={open}
-							>
-								{__(
-									null === value
-										? `Upload Icon`
-										: `Change Icon`
-								)}
-							</Button>
+							/>
 						);
 					}}
 				/>
@@ -138,7 +199,9 @@ const Item = ({ type, url, attachmentId, label, icon, index }) => {
 						disabled={!allowEditing}
 					/>
 				)}
-				{['link', 'promo', 'qA', 'supplemental'].includes(type) && (
+				{['link', 'promo', 'qA', 'supplemental', 'video'].includes(
+					type
+				) && (
 					<Fragment>
 						<TextControl
 							autoComplete={false}
@@ -163,79 +226,111 @@ const Item = ({ type, url, attachmentId, label, icon, index }) => {
 								label="Icon"
 								value={icon}
 								options={getOptions()}
-								onChange={(t) => {
-									console.log(t);
-									updateItem(index, 'icon', t, ITEMS_TYPE);
-								}}
+								onChange={(t) =>
+									updateItem(index, 'icon', t, ITEMS_TYPE)
+								}
 								disabled={!allowEditing}
 							/>
 						)}
 					</Fragment>
 				)}
-				<ButtonGroup>
-					{[
-						'report',
-						'questionnaire',
-						'detailedTable',
-						'powerpoint',
-						'presentation',
-						'pressRelease',
-						'topline',
-					].includes(type) && (
-						<UploadFileButton
-							title={getLabel(type)}
-							value={attachmentId}
+				<VStack spacing={2}>
+					<HStack spacing={2} role="group" justify="flex-start">
+						<Button
+							variant="secondary"
+							icon={connection}
+							label={__('Change Type')}
+							onClick={() => {
+								toggleVisibility(true);
+							}}
+							disabled={!allowEditing}
 						/>
-					)}
-					{'promo' === type && (
-						<UploadIconButton
-							title={getLabel(type)}
-							value={attachmentId}
-						/>
-					)}
-					<Button
-						variant="secondary"
-						onClick={() => {
-							toggleVisibility(true);
-						}}
-						disabled={!allowEditing}
-					>
-						Change Type
-					</Button>
-					{popoverVisible && (
-						<TypeSelect
-							type={type}
-							onChange={(newType) => {
-								// Set up the new type
-								updateItem(index, 'type', newType, ITEMS_TYPE);
-								if (
-									[
-										'report',
-										'questionnaire',
-										'detailedTable',
-										'powerpoint',
-										'presentation',
-										'pressRelease',
-										'topline',
-										'pormo',
-									].includes(newType)
-								) {
+						{popoverVisible && (
+							<TypeSelect
+								type={type}
+								onChange={(newType) => {
+									// Update the type.
 									updateItem(
 										index,
-										'attachmentId',
-										null,
+										'type',
+										newType,
 										ITEMS_TYPE
 									);
+									// Only clear fields the new type doesn't support;
+									// preserve everything else so users don't lose data
+									// when switching between similar types.
+									if (!TYPES_WITH_LABEL.includes(newType)) {
+										updateItem(
+											index,
+											'label',
+											'',
+											ITEMS_TYPE
+										);
+									}
+									if (
+										!TYPES_WITH_ICON_SELECT.includes(
+											newType
+										)
+									) {
+										updateItem(
+											index,
+											'icon',
+											'',
+											ITEMS_TYPE
+										);
+									}
+									if (
+										!TYPES_WITH_ATTACHMENT.includes(newType)
+									) {
+										updateItem(
+											index,
+											'attachmentId',
+											null,
+											ITEMS_TYPE
+										);
+									}
+									toggleVisibility(false);
+								}}
+								toggleVisibility={toggleVisibility}
+							/>
+						)}
+						{[
+							'report',
+							'questionnaire',
+							'detailedTable',
+							'powerpoint',
+							'presentation',
+							'pressRelease',
+							'topline',
+						].includes(type) && (
+							<UploadFileButton
+								title={getLabel(type)}
+								value={attachmentId}
+							/>
+						)}
+						{'promo' === type && (
+							<UploadIconButton
+								title={getLabel(type)}
+								value={attachmentId}
+							/>
+						)}
+						{'topline' === type && attachmentId && (
+							<AISuggestButton
+								variant="primary"
+								disabled={!allowEditing}
+								isLoading={isConverting}
+								onClick={handleConvertTopline}
+								label={
+									isConverting
+										? __('Extracting…')
+										: __('Extract with AI')
 								}
-								updateItem(index, 'url', '', ITEMS_TYPE);
-								updateItem(index, 'label', '', ITEMS_TYPE);
-								updateItem(index, 'icon', '', ITEMS_TYPE);
-								toggleVisibility(false);
-							}}
-							toggleVisibility={toggleVisibility}
-						/>
-					)}
-				</ButtonGroup>
+								text={null}
+								fullWidth={false}
+							/>
+						)}
+					</HStack>
+				</VStack>
 			</div>
 		</ListItem>
 	);

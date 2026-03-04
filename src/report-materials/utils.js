@@ -1,7 +1,6 @@
 /**
  * External Dependencies
  */
-import { icons } from '@prc/icons';
 
 export function getItemLabel(item) {
 	if (item.hasOwnProperty('label') && item.label !== '') {
@@ -28,6 +27,10 @@ export function getItemLabel(item) {
 			return 'Supplemental';
 		case 'topline':
 			return 'Topline';
+		case 'video':
+			return 'Video';
+		case 'dataset':
+			return 'Dataset';
 		default:
 			return 'Unknown';
 	}
@@ -55,6 +58,10 @@ export function getItemIcon(type) {
 			return 'file';
 		case 'topline':
 			return 'clipboard';
+		case 'video':
+			return 'video';
+		case 'dataset':
+			return 'download';
 		default:
 			return 'file';
 	}

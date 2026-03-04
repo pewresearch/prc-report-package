@@ -64,7 +64,7 @@ class Report_Pagination {
 		$styles = array(
 			'--item-background-color'              => $item_bg,
 			'--item-text-color'                    => $item_text,
-			'--item-border-color'                  => $item_border,
+			'--item-brdr-color'                    => $item_border,
 			'--item-hover-background-color'        => $item_hover_bg,
 			'--item-active-background-color'       => $item_active_bg,
 			'--next-button-background-color'       => $next_btn_bg,

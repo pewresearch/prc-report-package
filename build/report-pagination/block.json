@@ -1,101 +1,113 @@
 {
-	"$schema": "https://schemas.wp.org/trunk/block.json",
-	"apiVersion": 3,
-	"name": "prc-block/report-pagination",
-	"version": "1.0.0",
-	"title": "Report Pagination",
-	"category": "theme",
-	"description": "Provides a stylized pagination for use with reports",
-	"attributes": {
-		"backgroundColor": {
-			"type": "string"
-		},
-		"textColor": {
-			"type": "string"
-		},
-		"itemBackgroundColor": {
-			"type": "string"
-		},
-		"customItemBackgroundColor": {
-			"type": "string"
-		},
-		"itemTextColor": {
-			"type": "string"
-		},
-		"customItemTextColor": {
-			"type": "string"
-		},
-		"itemBorderColor": {
-			"type": "string"
-		},
-		"customItemBorderColor": {
-			"type": "string"
-		},
-		"itemHoverBackgroundColor": {
-			"type": "string"
-		},
-		"customItemHoverBackgroundColor": {
-			"type": "string"
-		},
-		"itemActiveBackgroundColor": {
-			"type": "string"
-		},
-		"customItemActiveBackgroundColor": {
-			"type": "string"
-		},
-		"nextButtonBackgroundColor": {
-			"type": "string"
-		},
-		"customNextButtonBackgroundColor": {
-			"type": "string"
-		},
-		"nextButtonTextColor": {
-			"type": "string"
-		},
-		"customNextButtonTextColor": {
-			"type": "string"
-		},
-		"nextButtonBoxShadowColor": {
-			"type": "string"
-		},
-		"customNextButtonBoxShadowColor": {
-			"type": "string"
-		}
-	},
-	"supports": {
-		"color": {
-			"background": true,
-			"text": true,
-			"link": true
-		},
-		"anchor": true,
-		"html": false,
-		"spacing": {
-			"blockGap": ["horizontal", "vertical"],
-			"margin": ["top", "bottom"],
-			"padding": true
-		},
-		"layout": {
-			"allowSwitching": false,
-			"allowInheriting": false,
-			"allowEditing": false,
-			"default": {
-				"type": "flex",
-				"flexWrap": "wrap"
-			}
-		},
-		"typography": {
-			"fontSize": true,
-			"__experimentalFontFamily": true,
-			"__experimentalDefaultControls": {
-				"fontSize": true,
-				"__experimentalFontFamily": true
-			}
-		}
-	},
-	"usesContext": ["postId", "postType"],
-	"textdomain": "report-pagination",
-	"editorScript": "file:./index.js",
-	"editorStyle": "file:./index.css",
-	"style": ["file:./style-index.css", "prc-block-library--pagination"]
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "prc-block/report-pagination",
+  "version": "1.0.0",
+  "title": "Report Pagination",
+  "category": "theme",
+  "description": "Provides a stylized pagination for use with reports",
+  "attributes": {
+    "backgroundColor": {
+      "type": "string"
+    },
+    "textColor": {
+      "type": "string"
+    },
+    "itemBackgroundColor": {
+      "type": "string"
+    },
+    "customItemBackgroundColor": {
+      "type": "string"
+    },
+    "itemTextColor": {
+      "type": "string"
+    },
+    "customItemTextColor": {
+      "type": "string"
+    },
+    "itemBorderColor": {
+      "type": "string"
+    },
+    "customItemBorderColor": {
+      "type": "string"
+    },
+    "itemHoverBackgroundColor": {
+      "type": "string"
+    },
+    "customItemHoverBackgroundColor": {
+      "type": "string"
+    },
+    "itemActiveBackgroundColor": {
+      "type": "string"
+    },
+    "customItemActiveBackgroundColor": {
+      "type": "string"
+    },
+    "nextButtonBackgroundColor": {
+      "type": "string"
+    },
+    "customNextButtonBackgroundColor": {
+      "type": "string"
+    },
+    "nextButtonTextColor": {
+      "type": "string"
+    },
+    "customNextButtonTextColor": {
+      "type": "string"
+    },
+    "nextButtonBoxShadowColor": {
+      "type": "string"
+    },
+    "customNextButtonBoxShadowColor": {
+      "type": "string"
+    }
+  },
+  "supports": {
+    "color": {
+      "background": true,
+      "text": true,
+      "link": true
+    },
+    "anchor": true,
+    "html": false,
+    "spacing": {
+      "blockGap": [
+        "horizontal",
+        "vertical"
+      ],
+      "margin": [
+        "top",
+        "bottom"
+      ],
+      "padding": true
+    },
+    "layout": {
+      "allowSwitching": false,
+      "allowInheriting": false,
+      "allowEditing": false,
+      "default": {
+        "type": "flex",
+        "flexWrap": "wrap"
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "__experimentalFontFamily": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true,
+        "__experimentalFontFamily": true
+      }
+    }
+  },
+  "usesContext": [
+    "postId",
+    "postType"
+  ],
+  "textdomain": "report-pagination",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": [
+    "file:./style-index.css",
+    "prc-block-library--pagination"
+  ]
 }

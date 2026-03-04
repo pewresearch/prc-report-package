@@ -53,6 +53,7 @@ class Report_Materials {
 		}
 		switch ( $item['type'] ) {
 			case 'detailTable':
+			case 'detailedTable':
 				return 'Data Table';
 			case 'link':
 				return 'Link';
@@ -72,6 +73,10 @@ class Report_Materials {
 				return 'Supplemental';
 			case 'topline':
 				return 'Topline';
+			case 'video':
+				return 'Video';
+			case 'dataset':
+				return 'Dataset';
 			default:
 				return 'Unknown';
 		}
@@ -87,6 +92,7 @@ class Report_Materials {
 		$icon_slug = array_key_exists( 'icon', $item ) ? $item['icon'] : $item['type'];
 		switch ( $icon_slug ) {
 			case 'detailTable':
+			case 'detailedTable':
 				return 'table';
 			case 'link':
 				return 'link';
