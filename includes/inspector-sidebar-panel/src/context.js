@@ -1,119 +1,82 @@
 /* eslint-disable max-lines-per-function */
-/* eslint-disable max-len */
-/**
- * External Dependencies
- */
-import { useDebounce } from '@prc/hooks';
-
 /**
  * WordPress Dependencies
  */
 import {
-	useEffect,
-	useState,
 	useContext,
-	useCallback,
 	createContext,
+	useRef,
+	useCallback,
 	useMemo,
 } from '@wordpress/element';
 import {
-	useEntityProp,
-	useResourcePermissions,
 	useEntityRecord,
+	useResourcePermissions,
+	useEntityProp,
 } from '@wordpress/core-data';
 import { decodeEntities } from '@wordpress/html-entities';
 
-/**
- * Internal Dependencies
- */
-
 const postReportPackageContext = createContext();
 
-const usePostReportPackageContext = (parentId, postType, postId) => {
-	// Quick memoized check to determine if this is a child post or not.
-	const isChild = useMemo(() => {
-		return parentId !== postId;
-	}, [parentId, postId]);
+const META_KEY_MAP = {
+	materials: 'reportMaterials',
+	chapters: 'multiSectionReport',
+	parts: 'package_parts',
+};
 
-	// Get the parent record.
+const usePostReportPackageContext = (parentId, postType, postId) => {
+	const isChild = useMemo(() => parentId !== postId, [parentId, postId]);
+
 	const { record, isResolving } = useEntityRecord(
 		'postType',
 		postType,
 		parentId
 	);
-	// Get the parent meta values and setter function.
 	const [meta, setMeta] = useEntityProp(
 		'postType',
 		postType,
 		'meta',
 		parentId
 	);
-
-	// Determine if the current user has permissions to edit the parent post.
 	const { canDelete, canUpdate } = useResourcePermissions('posts', parentId);
 
-	// State for the materials, chapters and parts.
-	// Package Materials
-	// @TODO: Change to package_materials
-	const [materials, _setMaterials] = useState(null);
-	const _materials = useDebounce(materials, 100);
-	useEffect(() => {
-		if (null === _materials && meta?.reportMaterials !== undefined) {
-			_setMaterials(meta.reportMaterials);
-		}
-		if (_materials !== null && meta?.reportMaterials !== _materials) {
-			setMeta({ ...meta, reportMaterials: _materials });
-		}
-	}, [_materials, meta, setMeta]);
-	// Package Chapters
-	// @TODO: Change to package_chapters
-	const [chapters, _setChapters] = useState(null);
-	const _chapters = useDebounce(chapters, 100);
-	useEffect(() => {
-		if (null === _chapters && meta?.multiSectionReport !== undefined) {
-			_setChapters(meta.multiSectionReport);
-		}
-		if (_chapters !== null && meta?.multiSectionReport !== _chapters) {
-			setMeta({ ...meta, multiSectionReport: _chapters });
-		}
-	}, [_chapters, meta, setMeta]);
-	// Package Parts
-	const [parts, _setParts] = useState(null);
-	const _parts = useDebounce(parts, 100);
-	useEffect(() => {
-		if (null === _parts && meta?.package_parts !== undefined) {
-			_setParts(meta.package_parts);
-		}
-		if (_parts !== null && meta?.package_parts !== _parts) {
-			setMeta({ ...meta, package_parts: _parts });
-		}
-	}, [_parts, meta, setMeta]);
-	// Enable Parts (flag)
-	const [_enableParts, setEnableParts] = useState(null);
-	const enableParts = useDebounce(_enableParts, 150);
-	const toggleParts = () => {
-		setEnableParts(!enableParts);
-	};
-	useEffect(() => {
-		// if enableParts is null and meta.package_parts__enabled has a value then set it...
-		if (
-			enableParts === null &&
-			meta?.package_parts__enabled !== undefined
-		) {
-			setEnableParts(meta.package_parts__enabled);
-		}
-		// if enableParts is not null and the meta value is not the same as the enableParts value, update the meta value.
-		if (
-			enableParts !== null &&
-			meta?.package_parts__enabled !== enableParts
-		) {
-			setMeta({ ...meta, package_parts__enabled: enableParts });
-		}
-	}, [enableParts, meta, setMeta]);
+	// Read directly from meta — no local state copies.
+	const materials = meta?.reportMaterials ?? [];
+	const chapters = meta?.multiSectionReport ?? [];
+	const parts = meta?.package_parts ?? [];
+	const enableParts = meta?.package_parts__enabled ?? false;
+
+	// Refs for accessing current values inside stable callbacks.
+	// Eagerly updated after each mutation so rapid consecutive calls
+	// (e.g. "Change Type" updating type, url, label, icon in one click)
+	// each see the previous call's result.
+	const metaRef = useRef(meta);
+	metaRef.current = meta;
+	const materialsRef = useRef(materials);
+	materialsRef.current = materials;
+	const chaptersRef = useRef(chapters);
+	chaptersRef.current = chapters;
+	const partsRef = useRef(parts);
+	partsRef.current = parts;
+	const enablePartsRef = useRef(enableParts);
+	enablePartsRef.current = enableParts;
+
+	/**
+	 * Write a single meta key and eagerly update refs so
+	 * back-to-back calls within the same tick see each other.
+	 */
+	const writeMeta = useCallback(
+		(metaKey, value) => {
+			const next = { ...metaRef.current, [metaKey]: value };
+			metaRef.current = next;
+			setMeta(next);
+		},
+		[setMeta]
+	);
 
 	const parentPost = useMemo(() => {
 		if (isResolving || !record) {
-			return;
+			return undefined;
 		}
 		return record;
 	}, [record, isResolving]);
@@ -129,114 +92,84 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		if (isResolving) {
 			return false;
 		}
-		if (canDelete && canUpdate) {
-			return true;
-		}
-		return false;
+		return canDelete && canUpdate;
 	}, [isResolving, canDelete, canUpdate]);
 
 	const hasChapters = useMemo(() => {
-		return null !== chapters && chapters.length > 0;
+		return Array.isArray(chapters) && chapters.length > 0;
 	}, [chapters]);
 
-	/**
-	 * Returns the correct state setter for the given item type.
-	 */
-	const getSetterByItemType = useCallback((itemsType) => {
-		if ('materials' === itemsType) {
-			return _setMaterials;
-		} else if ('chapters' === itemsType) {
-			return _setChapters;
-		} else if ('parts' === itemsType) {
-			return _setParts;
-		}
+	const getRefByItemType = useCallback((itemsType) => {
+		if ('materials' === itemsType) return materialsRef;
+		if ('chapters' === itemsType) return chaptersRef;
+		if ('parts' === itemsType) return partsRef;
 		return null;
 	}, []);
 
 	const reorder = useCallback(
 		(oldIndex, newIndex, itemsType = 'materials') => {
-			if (!allowEditing) {
-				return;
-			}
-			const setter = getSetterByItemType(itemsType);
-			if (!setter) {
-				return;
-			}
-			setter((prevItems) => {
-				if (!prevItems) {
-					return prevItems;
-				}
-				const newItems = [...prevItems];
-				const [item] = newItems.splice(oldIndex, 1);
-				newItems.splice(newIndex, 0, item);
-				return newItems;
-			});
+			const ref = getRefByItemType(itemsType);
+			const metaKey = META_KEY_MAP[itemsType];
+			if (!ref || !metaKey) return;
+			const next = Array.isArray(ref.current) ? [...ref.current] : [];
+			const [item] = next.splice(oldIndex, 1);
+			next.splice(newIndex, 0, item);
+			ref.current = next;
+			writeMeta(metaKey, next);
 		},
-		[allowEditing, getSetterByItemType]
+		[writeMeta, getRefByItemType]
 	);
 
 	const append = useCallback(
 		(key, value = {}, itemsType = 'materials') => {
-			if (!allowEditing) {
-				return;
-			}
-			const setter = getSetterByItemType(itemsType);
-			if (!setter) {
-				return;
-			}
-			const obj = { key, ...value };
-			setter((prevItems) => [...(prevItems || []), obj]);
+			const ref = getRefByItemType(itemsType);
+			const metaKey = META_KEY_MAP[itemsType];
+			if (!ref || !metaKey) return;
+			const next = [
+				...(Array.isArray(ref.current) ? ref.current : []),
+				{ key, ...value },
+			];
+			ref.current = next;
+			writeMeta(metaKey, next);
 		},
-		[allowEditing, getSetterByItemType]
+		[writeMeta, getRefByItemType]
 	);
 
 	const remove = useCallback(
 		(index, itemsType = 'materials') => {
-			if (!allowEditing) {
-				return;
-			}
-			const setter = getSetterByItemType(itemsType);
-			if (!setter) {
-				return;
-			}
-			setter((prevItems) => {
-				if (!prevItems) {
-					return prevItems;
-				}
-				return prevItems.filter((_, i) => i !== index);
-			});
+			const ref = getRefByItemType(itemsType);
+			const metaKey = META_KEY_MAP[itemsType];
+			if (!ref || !metaKey) return;
+			const next = Array.isArray(ref.current)
+				? ref.current.filter((_, i) => i !== index)
+				: [];
+			ref.current = next;
+			writeMeta(metaKey, next);
 		},
-		[allowEditing, getSetterByItemType]
+		[writeMeta, getRefByItemType]
 	);
 
 	const updateItem = useCallback(
 		(index, valueKey, value, itemsType = 'materials') => {
-			if (!allowEditing) {
-				return;
-			}
-			const setter = getSetterByItemType(itemsType);
-			if (!setter) {
-				return;
-			}
-			// Use a functional updater so that rapid successive calls
-			// (e.g. "Change Type" updating type, url, label, icon in one click)
-			// each see the result of the previous update instead of stale state.
-			// Spread each item to create new object references so that
-			// WordPress core-data properly detects the meta change as dirty.
-			setter((prevItems) => {
-				if (!prevItems) {
-					return prevItems;
-				}
-				return prevItems.map((item, i) =>
-					i === index ? { ...item, [valueKey]: value } : item
-				);
-			});
+			const ref = getRefByItemType(itemsType);
+			const metaKey = META_KEY_MAP[itemsType];
+			if (!ref || !metaKey) return;
+			const next = Array.isArray(ref.current)
+				? ref.current.map((item, i) =>
+						i === index ? { ...item, [valueKey]: value } : item
+				  )
+				: [];
+			ref.current = next;
+			writeMeta(metaKey, next);
 		},
-		[allowEditing, getSetterByItemType]
+		[writeMeta, getRefByItemType]
 	);
 
+	const toggleParts = useCallback(() => {
+		writeMeta('package_parts__enabled', !enablePartsRef.current);
+	}, [writeMeta]);
+
 	return {
-		// Editor and post info:
 		isChild,
 		isResolving,
 		allowEditing,
@@ -245,13 +178,11 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		postType,
 		parentPost,
 		parentPostTitle,
-		// Package settings and data:
 		hasChapters,
 		enableParts,
 		materials,
 		chapters,
 		parts,
-		// Context functions:
 		reorder,
 		append,
 		remove,

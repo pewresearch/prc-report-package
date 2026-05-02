@@ -1,0 +1,52 @@
+
+> @prc/report-package@1.0.0 build
+> npm run build:blocks && npm run build:inspector-panel
+
+
+> @prc/report-package@1.0.0 build:blocks
+> wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest
+
+assets by path [1m[32mreport-pagination/[39m[22m 21.1 KiB
+  assets by chunk 11.1 KiB (name: report-pagination/index) 4 assets
+  assets by chunk 2.4 KiB (id hint: style)
+    asset [1m[32mreport-pagination/style-index-rtl.css[39m[22m 1.2 KiB [1m[32m[emitted][39m[22m (name: report-pagination/style-index) (id hint: style)
+    asset [1m[32mreport-pagination/style-index.css[39m[22m 1.2 KiB [1m[32m[emitted][39m[22m (name: report-pagination/style-index) (id hint: style)
+  asset [1m[32mreport-pagination/class-report-pagination.php[39m[22m 5.29 KiB [1m[32m[emitted][39m[22m [from: src/report-pagination/class-report-pagination.php] [1m[32m[copied][39m[22m
+  asset [1m[32mreport-pagination/block.json[39m[22m 2.32 KiB [1m[32m[emitted][39m[22m [from: src/report-pagination/block.json] [1m[32m[copied][39m[22m
+assets by path [1m[32mreport-materials/[39m[22m 17.5 KiB
+  assets by chunk 7.88 KiB (name: report-materials/index) 4 assets
+  assets by chunk 2.46 KiB (name: report-materials/style-index)
+    asset [1m[32mreport-materials/style-index-rtl.css[39m[22m 1.23 KiB [1m[32m[emitted][39m[22m (name: report-materials/style-index) (id hint: style)
+    asset [1m[32mreport-materials/style-index.css[39m[22m 1.23 KiB [1m[32m[emitted][39m[22m (name: report-materials/style-index) (id hint: style)
+  asset [1m[32mreport-materials/class-report-materials.php[39m[22m 5.64 KiB [1m[32m[emitted][39m[22m [from: src/report-materials/class-report-materials.php] [1m[32m[copied][39m[22m
+  asset [1m[32mreport-materials/block.json[39m[22m 1.54 KiB [1m[32m[emitted][39m[22m [from: src/report-materials/block.json] [1m[32m[copied][39m[22m
+Entrypoint [1mreport-materials/index[39m[22m 10.3 KiB = 6 assets
+Entrypoint [1mreport-pagination/index[39m[22m 13.5 KiB = 6 assets
+orphan modules 248 KiB (javascript) 3.66 KiB (runtime) [1m[33m[orphan][39m[22m 369 modules
+runtime modules 5.58 KiB 8 modules
+built modules 2.51 KiB (css/mini-extract) 34.9 KiB (javascript) [1m[33m[built][39m[22m
+  cacheable modules 2.51 KiB
+    modules by path [1m./src/report-materials/[39m[22m 1.23 KiB
+      css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/report-materials/style.scss[39m[22m 1.23 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/report-materials/editor.scss[39m[22m 0 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    modules by path [1m./src/report-pagination/[39m[22m 1.28 KiB
+      css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/report-pagination/style.scss[39m[22m 1.2 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      css ../../node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[3].use[1]!../../node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[3].use[2]!../../node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[3].use[3]![1m./src/report-pagination/editor.scss[39m[22m 88 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  javascript modules 34.9 KiB
+    [1m./src/report-materials/index.js + 18 modules[39m[22m 14.7 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./src/report-pagination/index.js + 20 modules[39m[22m 20.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6963 ms
+
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 133 ms
+Block metadata PHP file generated at: build/blocks-manifest.php
+
+> @prc/report-package@1.0.0 build:inspector-panel
+> wp-scripts build --source-path=includes/inspector-sidebar-panel/src --output-path=includes/inspector-sidebar-panel/build
+
+asset [1m[32mindex.js[39m[22m 51.6 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: index)
+asset [1m[32mindex.asset.php[39m[22m 379 bytes [1m[32m[emitted][39m[22m (name: index)
+Entrypoint [1mindex[39m[22m 52 KiB = [1m[32mindex.js[39m[22m 51.6 KiB [1m[32mindex.asset.php[39m[22m 379 bytes
+orphan modules 354 KiB [1m[33m[orphan][39m[22m 378 modules
+runtime modules 663 bytes 3 modules
+[1m./includes/inspector-sidebar-panel/src/index.js + 63 modules[39m[22m 131 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 9225 ms

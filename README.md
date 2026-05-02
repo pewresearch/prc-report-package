@@ -16,28 +16,28 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 
 ## Key files
 
-| File | Purpose |
-|---|---|
-| `prc-report-package.php` | Plugin entry point; defines constants, registers activation/deactivation hooks, boots `Plugin` |
-| `includes/class-plugin.php` | Orchestrates all dependencies via `Loader`; initializes blocks via `Block_Utils\load_blocks` |
-| `includes/class-loader.php` | Hook registration queue (standard PRC loader pattern) |
-| `includes/class-rest-api.php` | Registers post meta fields and REST fields; defines meta key constants |
-| `includes/class-relationship-manager.php` | Syncs child posts on parent update/publish; overrides adjacent-post WHERE clauses |
-| `includes/class-wp-admin.php` | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts |
-| `includes/class-distributor.php` | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration |
-| `includes/utils.php` | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
-| `includes/inspector-sidebar-panel/src/index.js` | Block editor plugin entry; renders `PluginSidebar` + `PluginPrePublishPanel` |
-| `includes/inspector-sidebar-panel/src/chapters/` | Chapters management UI (add/search existing, create draft, reorder) |
-| `includes/inspector-sidebar-panel/src/materials/` | Materials management UI (add, reorder, set type) |
-| `build/report-materials/` | `prc-block/report-materials` block (block.json + PHP render class + JS editor) |
-| `build/report-pagination/` | `prc-block/report-pagination` block (block.json + PHP render class + JS editor) |
+| File                                              | Purpose                                                                                                                                 |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `prc-report-package.php`                          | Plugin entry point; defines constants, registers activation/deactivation hooks, boots `Plugin`                                          |
+| `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\BlockUtils\load_blocks`                                         |
+| `includes/class-loader.php`                       | Hook registration queue (standard PRC loader pattern)                                                                                   |
+| `includes/class-rest-api.php`                     | Registers post meta fields and REST fields; defines meta key constants                                                                  |
+| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; overrides adjacent-post WHERE clauses                                                       |
+| `includes/class-wp-admin.php`                     | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts                                                          |
+| `includes/class-distributor.php`                  | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration                        |
+| `includes/utils.php`                              | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
+| `includes/inspector-sidebar-panel/src/index.js`   | Block editor plugin entry; renders `PluginSidebar` + `PluginPrePublishPanel`                                                            |
+| `includes/inspector-sidebar-panel/src/chapters/`  | Chapters management UI (add/search existing, create draft, reorder)                                                                     |
+| `includes/inspector-sidebar-panel/src/materials/` | Materials management UI (add, reorder, set type)                                                                                        |
+| `build/report-materials/`                         | `prc-block/report-materials` block (block.json + PHP render class + JS editor)                                                          |
+| `build/report-pagination/`                        | `prc-block/report-pagination` block (block.json + PHP render class + JS editor)                                                         |
 
 ## Blocks
 
-| Block | Name | Description |
-|---|---|---|
-| `prc-block/report-materials` | Report Materials | Renders a `<ul>` of all materials for the current post's package; reads `reportMaterials` meta via `get_package_materials()` |
-| `prc-block/report-pagination` | Report Pagination | Renders chapter pagination and a "Next: …" button; reads from `get_pagination()` which wraps `Block_Utils\Pagination` |
+| Block                         | Name              | Description                                                                                                                  |
+| ----------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `prc-block/report-materials`  | Report Materials  | Renders a `<ul>` of all materials for the current post's package; reads `reportMaterials` meta via `get_package_materials()` |
+| `prc-block/report-pagination` | Report Pagination | Renders chapter pagination and a "Next: …" button; reads from `get_pagination()` which wraps `PRC\BlockUtils\Pagination`     |
 
 Both blocks are dynamic (PHP-rendered), use `postId` context, and support color, spacing, and typography controls.
 
@@ -45,51 +45,51 @@ Both blocks are dynamic (PHP-rendered), use `postId` context, and support color,
 
 ### Actions consumed
 
-| Hook | Description |
-|---|---|
-| `init` | Registers post meta fields, block types, and Distributor data handlers |
-| `rest_api_init` | Registers REST fields (`table_of_contents`, `report_materials`, `report_pagination`, `parent_info`) on `post` |
-| `enqueue_block_editor_assets` | Enqueues the inspector sidebar panel script for enabled post types |
-| `prc_platform_on_incremental_save` | Sets `post_parent` on all chapter posts listed in `multiSectionReport` meta |
-| `prc_platform_on_update` | Propagates parent's `post_status`, `post_date`, and taxonomy terms to all chapters |
-| `prc_platform_on_publish` | Same as `prc_platform_on_update` |
-| `dt_process_distributor_attributes` | Restores `post_parent` relationships on the target site after Distributor push |
+| Hook                                | Description                                                                                                   |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `init`                              | Registers post meta fields, block types, and Distributor data handlers                                        |
+| `rest_api_init`                     | Registers REST fields (`table_of_contents`, `report_materials`, `report_pagination`, `parent_info`) on `post` |
+| `enqueue_block_editor_assets`       | Enqueues the inspector sidebar panel script for enabled post types                                            |
+| `prc_platform_on_incremental_save`  | Sets `post_parent` on all chapter posts listed in `multiSectionReport` meta                                   |
+| `prc_platform_on_update`            | Propagates parent's `post_status`, `post_date`, and taxonomy terms to all chapters                            |
+| `prc_platform_on_publish`           | Same as `prc_platform_on_update`                                                                              |
+| `dt_process_distributor_attributes` | Restores `post_parent` relationships on the target site after Distributor push                                |
 
 ### Filters consumed
 
-| Hook | Direction | Description |
-|---|---|---|
-| `get_next_post_where` | Filter | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order |
-| `get_previous_post_where` | Filter | Same as above for `get_previous_post()` |
-| `the_title` | Filter | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts |
+| Hook                      | Direction | Description                                                                                                  |
+| ------------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
+| `get_next_post_where`     | Filter    | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order |
+| `get_previous_post_where` | Filter    | Same as above for `get_previous_post()`                                                                      |
+| `the_title`               | Filter    | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts                                       |
 
 ### Filters provided
 
-| Hook | Description |
-|---|---|
+| Hook                                         | Description                                                                                                                         |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `prc_platform_post_report_package_materials` | Filters the materials array before it is returned by `get_package_materials()`. Receives `$materials` (array) and `$post_id` (int). |
 
 ## REST fields
 
 All fields are read-only (GET only) and appended to existing post REST responses.
 
-| Field | Post types | Callback |
-|---|---|---|
-| `table_of_contents` | All public post types | Returns ordered chapter array from `get_package_chapters()` |
-| `report_materials` | `post` | Returns materials array from `get_package_materials()` |
-| `report_pagination` | `post` | Returns `{ current_post, next_post, previous_post, pagination_items }` from `get_pagination()` |
-| `parent_info` | `post` | Returns `{ parent_id, parent_title }` for child posts |
+| Field               | Post types            | Callback                                                                                       |
+| ------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
+| `table_of_contents` | All public post types | Returns ordered chapter array from `get_package_chapters()`                                    |
+| `report_materials`  | `post`                | Returns materials array from `get_package_materials()`                                         |
+| `report_pagination` | `post`                | Returns `{ current_post, next_post, previous_post, pagination_items }` from `get_pagination()` |
+| `parent_info`       | `post`                | Returns `{ parent_id, parent_title }` for child posts                                          |
 
 ## Post meta
 
 All meta is registered on `post`, exposed via REST, and revision-enabled.
 
-| Meta key | Type | Description |
-|---|---|---|
-| `multiSectionReport` | `array` | Ordered list of chapter objects: `[{ key: string, postId: int }]` |
-| `reportMaterials` | `array` | Materials: `[{ key, type, url, label, attachmentId, icon }]` |
-| `package_parts` | `array` | TOC groupings: `[{ key, label, items: int[] }]` where `items` are chapter post IDs |
-| `package_parts__enabled` | `boolean` | Whether TOC part grouping is active for this post |
+| Meta key                 | Type      | Description                                                                        |
+| ------------------------ | --------- | ---------------------------------------------------------------------------------- |
+| `multiSectionReport`     | `array`   | Ordered list of chapter objects: `[{ key: string, postId: int }]`                  |
+| `reportMaterials`        | `array`   | Materials: `[{ key, type, url, label, attachmentId, icon }]`                       |
+| `package_parts`          | `array`   | TOC groupings: `[{ key, label, items: int[] }]` where `items` are chapter post IDs |
+| `package_parts__enabled` | `boolean` | Whether TOC part grouping is active for this post                                  |
 
 > The meta keys `multiSectionReport` and `reportMaterials` use camelCase for legacy reasons. A TODO exists to rename them to snake_case (`package_chapters`, `package_materials`). Do not rename without a migration.
 
@@ -97,37 +97,37 @@ All meta is registered on `post`, exposed via REST, and revision-enabled.
 
 Defined in `includes/utils.php` under the `PRC\Platform\Report_Package` namespace.
 
-| Function | Returns | Description |
-|---|---|---|
-| `get_package_id( $post_id )` | `int` | Returns the package root ID. If `$post_id` is a child, returns its parent. |
-| `is_report_package( $post_id )` | `bool` | True if the post is a top-level package (has chapters, no parent). |
-| `is_chapter_part_of_report_package( $post_id )` | `bool` | True if the post (or its parent) has `multiSectionReport` meta. |
-| `is_part_of_a_report_package( $post_id )` | `bool` | True for both root packages and chapter posts. |
-| `get_package_chapters( $post_id )` | `array` | Returns ordered TOC array including root post, using `construct_chapter()`. |
-| `get_package_materials( $post_id )` | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection. |
-| `get_pagination( $post_id )` | `array` | Wraps `Block_Utils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`. |
+| Function                                        | Returns | Description                                                                                                   |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `get_package_id( $post_id )`                    | `int`   | Returns the package root ID. If `$post_id` is a child, returns its parent.                                    |
+| `is_report_package( $post_id )`                 | `bool`  | True if the post is a top-level package (has chapters, no parent).                                            |
+| `is_chapter_part_of_report_package( $post_id )` | `bool`  | True if the post (or its parent) has `multiSectionReport` meta.                                               |
+| `is_part_of_a_report_package( $post_id )`       | `bool`  | True for both root packages and chapter posts.                                                                |
+| `get_package_chapters( $post_id )`              | `array` | Returns ordered TOC array including root post, using `construct_chapter()`.                                   |
+| `get_package_materials( $post_id )`             | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection.           |
+| `get_pagination( $post_id )`                    | `array` | Wraps `PRC\BlockUtils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`. |
 
 ## Constants
 
 Defined in `prc-report-package.php`.
 
-| Constant | Value |
-|---|---|
-| `PRC_REPORT_PACKAGE_FILE` | Absolute path to the main plugin file |
-| `PRC_REPORT_PACKAGE_DIR` | Absolute path to the plugin directory |
-| `PRC_REPORT_PACKAGE_VERSION` | `1.0.0` |
-| `PRC_REPORT_PACKAGE_BLOCKS_DIR` | `{PRC_REPORT_PACKAGE_DIR}/build` |
-| `PRC_REPORT_PACKAGE_ENABLED_POST_TYPES` | `['post']` |
+| Constant                                | Value                                 |
+| --------------------------------------- | ------------------------------------- |
+| `PRC_REPORT_PACKAGE_FILE`               | Absolute path to the main plugin file |
+| `PRC_REPORT_PACKAGE_DIR`                | Absolute path to the plugin directory |
+| `PRC_REPORT_PACKAGE_VERSION`            | `1.0.0`                               |
+| `PRC_REPORT_PACKAGE_BLOCKS_DIR`         | `{PRC_REPORT_PACKAGE_DIR}/build`      |
+| `PRC_REPORT_PACKAGE_ENABLED_POST_TYPES` | `['post']`                            |
 
 ## Distributor integration
 
 When a report package post is pushed via Distributor, three data handlers cascade-distribute related content:
 
-| Handler | Meta key | What it does |
-|---|---|---|
-| `prc_report_package_chapters` | `multiSectionReport` | Distributes each chapter post and remaps `postId` values; also distributes `prc-chart-builder/synced-chart` and `prc-chart-builder/chart` block references found in chapter content |
-| `prc_report_package_materials` | `reportMaterials` | Distributes each material attachment and remaps `attachmentId` values |
-| `prc_report_package_parts` | `package_parts` | Remaps chapter post IDs stored in `items` arrays |
+| Handler                        | Meta key             | What it does                                                                                                                                                                        |
+| ------------------------------ | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prc_report_package_chapters`  | `multiSectionReport` | Distributes each chapter post and remaps `postId` values; also distributes `prc-chart-builder/synced-chart` and `prc-chart-builder/chart` block references found in chapter content |
+| `prc_report_package_materials` | `reportMaterials`    | Distributes each material attachment and remaps `attachmentId` values                                                                                                               |
+| `prc_report_package_parts`     | `package_parts`      | Remaps chapter post IDs stored in `items` arrays                                                                                                                                    |
 
 After distribution, `dt_process_distributor_attributes` restores `post_parent` on each chapter to point to the new parent ID on the target site. If meta is unavailable at hook time, a `shutdown` fallback handles the update.
 
@@ -137,7 +137,7 @@ Uses `WP_Block_Processor` (WordPress 6.9+) for efficient block traversal; falls 
 
 - **Required plugin:** `prc-platform-core`
 - **PHP:** 8.2+, **WordPress:** 6.7+
-- **PHP classes:** `PRC\Platform\Block_Utils\load_blocks`, `PRC\Platform\Block_Utils\Pagination`, `PRC\Platform\Block_Utils\get_block_gap_support_value`, `PRC\Platform\Icons\render`
+- **PHP classes:** `PRC\BlockUtils\load_blocks`, `PRC\BlockUtils\Pagination`, `PRC\BlockUtils\get_block_gap_support_value`, `PRC\Platform\Icons\render`
 - **Optional:** Distributor plugin — integration is gated on `function_exists( 'distributor_register_data' )`
 
 ## Development
@@ -150,8 +150,9 @@ npm run build -w @prc/report-package
 npm run start:blocks -w @prc/report-package
 npm run start:inspector-panel -w @prc/report-package
 
-# Run Playwright tests
-npm run test -w @prc/report-package
+# Run Playwright tests (from monorepo root; wp-env + Playwright are centralized)
+npm run env:start
+npm test -- tests/prc-report-package/
 ```
 
 The inspector panel (`includes/inspector-sidebar-panel/`) and the blocks (`src/report-materials/`, `src/report-pagination/`) have separate build pipelines. Both are invoked by the top-level `build` script.

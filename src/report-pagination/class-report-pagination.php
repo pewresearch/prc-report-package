@@ -129,11 +129,11 @@ class Report_Pagination {
 			return;
 		}
 
-		$block_gap = \PRC\Platform\Block_Utils\get_block_gap_support_value( $attributes );
+		$block_gap = \PRC\BlockUtils\get_block_gap_support_value( $attributes );
 
 		$wrapper_attributes = get_block_wrapper_attributes();
 
-		$pagination = new \PRC\Platform\Block_Utils\Pagination( $pagination_items );
+		$pagination = new \PRC\BlockUtils\Pagination( $pagination_items );
 
 		$pagination_markup = $pagination->get_markup();
 

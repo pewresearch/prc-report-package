@@ -98,10 +98,10 @@ class Plugin {
 		);
 
 		// Load block classes if the function exists.
-		if ( ! function_exists( '\PRC\Platform\Block_Utils\load_blocks' ) ) {
+		if ( ! function_exists( '\PRC\BlockUtils\load_blocks' ) ) {
 			return;
 		}
-		$blocks_loaded = \PRC\Platform\Block_Utils\load_blocks( PRC_REPORT_PACKAGE_DIR );
+		$blocks_loaded = \PRC\BlockUtils\load_blocks( PRC_REPORT_PACKAGE_DIR );
 		if ( ! is_wp_error( $blocks_loaded ) ) {
 			new Report_Materials( $this->get_loader() );
 			new Report_Pagination( $this->get_loader() );

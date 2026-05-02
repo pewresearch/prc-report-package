@@ -2,15 +2,13 @@
  * External Dependencies
  */
 import { List } from 'react-movable';
-import { usePostIdsAsOptions, LoadingIndicator } from '@prc/hooks';
 import styled from '@emotion/styled';
 
 /**
  * WordPress Dependencies
  */
-import { useState, useMemo } from '@wordpress/element';
 import { BaseControl, Button, SelectControl } from '@wordpress/components';
-import { select } from '@wordpress/data';
+import { useSelect } from '@wordpress/data';
 import { decodeEntities } from '@wordpress/html-entities';
 
 /**
@@ -48,14 +46,30 @@ export default function Parts() {
 		allowEditing,
 	} = usePostReportPackage();
 
-	const postIds = useMemo(
-		() =>
-			!isResolving
-				? chapters
-						.filter((chapter) => chapter.postId)
-						.map((chapter) => chapter.postId)
-				: [],
-		[chapters, isResolving]
+	const chapterOptions = useSelect(
+		(select) => {
+			if (isResolving || !Array.isArray(chapters)) {
+				return [];
+			}
+			return chapters
+				.filter((ch) => ch.postId)
+				.map((ch) => {
+					const post = select('core').getEntityRecord(
+						'postType',
+						postType,
+						ch.postId
+					);
+					if (!post) {
+						return null;
+					}
+					return {
+						value: ch.postId,
+						label: decodeEntities(post.title.rendered),
+					};
+				})
+				.filter(Boolean);
+		},
+		[chapters, isResolving, postType]
 	);
 
 	return (
@@ -69,66 +83,41 @@ export default function Parts() {
 				renderList={({ children, props }) => (
 					<div {...props}>{children}</div>
 				)}
-				renderItem={({ value, props, index }) => {
-					let options = postIds.map((postId) => {
-						const post = select('core').getEntityRecord(
-							'postType',
-							postType,
-							postId
-						);
-						if (!post) {
-							// Don't return anything... the post is not loaded yet
-							return null;
-						}
-						return {
-							value: postId,
-							label: decodeEntities(post.title.rendered),
-						};
-					});
-					options = options.filter((option) => option !== null);
-					console.log("renderItem", options, value);
-					return (
-						<div {...props}>
-							<ListItem
-								key={value.key}
-								defaultLabel="Part"
-								label={value.label}
-								displayLabelAsInput
-								onLabelUpdate={(newLabel) =>
-									updateItem(
-										index,
-										'label',
-										newLabel,
-										ITEMS_TYPE
-									)
-								}
-								index={index}
-								onRemove={() => remove(index, ITEMS_TYPE)}
-							>
-								<div>
-									<p>Chapters</p>
-									<StyledSelect
-										multiple
-										label={'Chapters'}
-										value={value.items ?? []} // e.g: value = [ 'a', 'c' ]
-										onChange={(selectedChapters) => {
-											console.log("Chapter selected", selectedChapters);
-											updateItem(
-												index,
-												'items',
-												selectedChapters,
-												ITEMS_TYPE
-											);
-										}}
-										options={options}
-										__next40pxDefaultSize
-										__nextHasNoMarginBottom
-									/>
-								</div>
-							</ListItem>
-						</div>
-					);
-				}}
+				renderItem={({ value, props, index }) => (
+					<div {...props}>
+						<ListItem
+							key={value.key}
+							defaultLabel="Part"
+							label={value.label}
+							displayLabelAsInput
+							onLabelUpdate={(newLabel) =>
+								updateItem(index, 'label', newLabel, ITEMS_TYPE)
+							}
+							index={index}
+							onRemove={() => remove(index, ITEMS_TYPE)}
+						>
+							<div>
+								<p>Chapters</p>
+								<StyledSelect
+									multiple
+									label={'Chapters'}
+									value={value.items ?? []}
+									onChange={(selectedChapters) => {
+										updateItem(
+											index,
+											'items',
+											selectedChapters,
+											ITEMS_TYPE
+										);
+									}}
+									options={chapterOptions}
+									__next40pxDefaultSize
+									__nextHasNoMarginBottom
+								/>
+							</div>
+						</ListItem>
+					</div>
+				)}
 			/>
 			<Button
 				variant="primary"

@@ -19,7 +19,7 @@
  * License:           GPL-2.0+
  * License URI:       http://www.gnu.org/licenses/gpl-2.0.txt
  * Text Domain:       prc-report-package
- * Requires Plugins:  prc-platform-core
+ * Requires Plugins:  prc-scripts, prc-post-publish-pipeline
  */
 
 namespace PRC\Platform\Report_Package;
@@ -32,12 +32,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+if ( ! defined( 'DEFAULT_TECHNICAL_CONTACT' ) ) {
+	define( 'DEFAULT_TECHNICAL_CONTACT', 'webdev@pewresearch.org' );
+}
+
 define( 'PRC_REPORT_PACKAGE_FILE', __FILE__ );
 define( 'PRC_REPORT_PACKAGE_DIR', __DIR__ );
 define( 'PRC_REPORT_PACKAGE_MANIFEST_FILE', __DIR__ . '/build/block-manifest.php' );
 define( 'PRC_REPORT_PACKAGE_BLOCKS_DIR', __DIR__ . '/build' );
 define( 'PRC_REPORT_PACKAGE_VERSION', '1.0.0' );
 define( 'PRC_REPORT_PACKAGE_ENABLED_POST_TYPES', array( 'post' ) );
+
+// Load the Jetpack Autoloader so runtime version-selection can pick the
+// highest version across all plugins that ship the same library dep
+// (see .cursor/plans/composer-shape-b-migration_0e4e9991.plan.md).
+$prc_report_package_autoloader = __DIR__ . '/vendor/autoload_packages.php';
+if ( file_exists( $prc_report_package_autoloader ) ) {
+	require_once $prc_report_package_autoloader;
+}
+unset( $prc_report_package_autoloader );
 
 /**
  * The code that runs during plugin activation.

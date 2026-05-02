@@ -8,7 +8,6 @@
 namespace PRC\Platform\Report_Package;
 
 use WP_Error;
-use WP_HTML_Heading_Processor;
 
 /**
  * Block Name:        Report Materials
@@ -132,7 +131,7 @@ class Report_Materials {
 		$hover_text  = $attributes['customHoverTextColor'] ?? '';
 		$active_bg   = $attributes['customActiveBackgroundColor'] ?? '';
 		$active_text = $attributes['customActiveTextColor'] ?? '';
-		$block_gap   = \PRC\Platform\Block_Utils\get_block_gap_support_value( $attributes );
+		$block_gap   = \PRC\BlockUtils\get_block_gap_support_value( $attributes );
 
 		$styles = array(
 			'--hover-background-color'  => $hover_bg,

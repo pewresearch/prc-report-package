@@ -123,6 +123,7 @@ class Rest_API {
 	public function init( $loader ) {
 		$loader->add_action( 'init', $this, 'register_meta_fields' );
 		$loader->add_action( 'rest_api_init', $this, 'register_rest_fields' );
+		$loader->add_action( 'rest_api_init', $this, 'register_writable_rest_fields' );
 	}
 
 	/**
@@ -327,5 +328,346 @@ class Rest_API {
 			'parent_title' => get_the_title( $parent_id ),
 			'parent_id'    => $parent_id,
 		);
+	}
+
+	/**
+	 * Register writable REST fields for editor use (RTC-safe).
+	 * Each field maps to an underlying post meta key with get/update callbacks
+	 * so the editor uses a single editEntityRecord() call per mutation.
+	 *
+	 * @hook rest_api_init
+	 */
+	public function register_writable_rest_fields() {
+		$fields = array(
+			'materialsOrdered' => array(
+				'get_callback'    => array( $this, 'get_materials_ordered' ),
+				'update_callback' => array( $this, 'update_materials_ordered' ),
+				'schema'          => array(
+					'description' => 'Ordered report materials for RTC.',
+					'type'        => 'array',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'key'          => array( 'type' => 'string' ),
+							'type'         => array( 'type' => 'string' ),
+							'url'          => array( 'type' => 'string' ),
+							'label'        => array( 'type' => 'string' ),
+							'attachmentId' => array( 'type' => array( 'integer', 'null' ) ),
+							'icon'         => array( 'type' => 'string' ),
+						),
+					),
+				),
+			),
+			'chaptersOrdered'  => array(
+				'get_callback'    => array( $this, 'get_chapters_ordered' ),
+				'update_callback' => array( $this, 'update_chapters_ordered' ),
+				'schema'          => array(
+					'description' => 'Ordered chapter list for RTC.',
+					'type'        => 'array',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => self::$chapters_schema_properties,
+					),
+				),
+			),
+			'partsOrdered'     => array(
+				'get_callback'    => array( $this, 'get_parts_ordered' ),
+				'update_callback' => array( $this, 'update_parts_ordered' ),
+				'schema'          => array(
+					'description' => 'Ordered TOC parts for RTC.',
+					'type'        => 'array',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'key'   => array( 'type' => 'string' ),
+							'items' => array(
+								'type'  => 'array',
+								'items' => array( 'type' => array( 'string', 'integer' ) ),
+							),
+							'label' => array( 'type' => 'string' ),
+						),
+					),
+				),
+			),
+			'partsEnabled'     => array(
+				'get_callback'    => array( $this, 'get_parts_enabled' ),
+				'update_callback' => array( $this, 'update_parts_enabled' ),
+				'schema'          => array(
+					'description' => 'Whether TOC parts are enabled.',
+					'type'        => 'boolean',
+				),
+			),
+		);
+
+		foreach ( $fields as $field_name => $args ) {
+			register_rest_field( 'post', $field_name, $args );
+		}
+	}
+
+	// ------------------------------------------------------------------
+	// Writable REST field helpers
+	// ------------------------------------------------------------------
+
+	/**
+	 * Get post ID from REST object (array or WP_Post).
+	 *
+	 * @param mixed $object The object.
+	 * @return int
+	 */
+	private function get_post_id_from_rest_object( $object ) {
+		if ( $object instanceof \WP_Post ) {
+			return (int) $object->ID;
+		}
+		if ( is_array( $object ) && isset( $object['id'] ) ) {
+			return (int) $object['id'];
+		}
+		return 0;
+	}
+
+	// ------------------------------------------------------------------
+	// materialsOrdered  ↔  reportMaterials meta
+	// ------------------------------------------------------------------
+
+	/**
+	 * Sanitize materials array.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return array
+	 */
+	private function sanitize_materials_array( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $value as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$item = array();
+			if ( isset( $row['key'] ) ) {
+				$item['key'] = sanitize_text_field( (string) $row['key'] );
+			}
+			if ( isset( $row['type'] ) ) {
+				$item['type'] = sanitize_text_field( (string) $row['type'] );
+			}
+			if ( isset( $row['url'] ) ) {
+				$item['url'] = esc_url_raw( (string) $row['url'] );
+			}
+			if ( isset( $row['label'] ) ) {
+				$item['label'] = sanitize_text_field( (string) $row['label'] );
+			}
+			if ( isset( $row['attachmentId'] ) && null !== $row['attachmentId'] ) {
+				$item['attachmentId'] = (int) $row['attachmentId'];
+			}
+			if ( isset( $row['icon'] ) ) {
+				$item['icon'] = sanitize_text_field( (string) $row['icon'] );
+			}
+			$out[] = $item;
+		}
+		return $out;
+	}
+
+	/**
+	 * REST get: materialsOrdered.
+	 *
+	 * @param mixed $object Prepared post.
+	 * @return array
+	 */
+	public function get_materials_ordered( $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return array();
+		}
+		$raw = get_post_meta( $post_id, self::$package_materials_meta_key, true );
+		return is_array( $raw ) ? $this->sanitize_materials_array( $raw ) : array();
+	}
+
+	/**
+	 * REST update: materialsOrdered — persist to reportMaterials meta.
+	 *
+	 * @param mixed $value  New value.
+	 * @param mixed $object Post object.
+	 * @return true|\WP_Error
+	 */
+	public function update_materials_ordered( $value, $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return new \WP_Error( 'invalid_post', 'Invalid post for materialsOrdered.' );
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to edit this post.' );
+		}
+		$sanitized = $this->sanitize_materials_array( $value );
+		update_post_meta( $post_id, self::$package_materials_meta_key, $sanitized );
+		return true;
+	}
+
+	// ------------------------------------------------------------------
+	// chaptersOrdered  ↔  multiSectionReport meta
+	// ------------------------------------------------------------------
+
+	/**
+	 * Sanitize chapters array.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return array
+	 */
+	private function sanitize_chapters_array( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $value as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$key     = isset( $row['key'] ) ? sanitize_text_field( (string) $row['key'] ) : '';
+			$post_id = isset( $row['postId'] ) ? (int) $row['postId'] : 0;
+			$out[]   = array(
+				'key'    => $key,
+				'postId' => $post_id,
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * REST get: chaptersOrdered.
+	 *
+	 * @param mixed $object Prepared post.
+	 * @return array
+	 */
+	public function get_chapters_ordered( $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return array();
+		}
+		$raw = get_post_meta( $post_id, self::$package_chapters_meta_key, true );
+		return is_array( $raw ) ? $this->sanitize_chapters_array( $raw ) : array();
+	}
+
+	/**
+	 * REST update: chaptersOrdered — persist to multiSectionReport meta.
+	 *
+	 * @param mixed $value  New value.
+	 * @param mixed $object Post object.
+	 * @return true|\WP_Error
+	 */
+	public function update_chapters_ordered( $value, $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return new \WP_Error( 'invalid_post', 'Invalid post for chaptersOrdered.' );
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to edit this post.' );
+		}
+		$sanitized = $this->sanitize_chapters_array( $value );
+		update_post_meta( $post_id, self::$package_chapters_meta_key, $sanitized );
+		return true;
+	}
+
+	// ------------------------------------------------------------------
+	// partsOrdered  ↔  package_parts meta
+	// ------------------------------------------------------------------
+
+	/**
+	 * Sanitize parts array.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return array
+	 */
+	private function sanitize_parts_array( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$out = array();
+		foreach ( $value as $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$item = array(
+				'key' => isset( $row['key'] ) ? sanitize_text_field( (string) $row['key'] ) : '',
+			);
+			if ( isset( $row['items'] ) && is_array( $row['items'] ) ) {
+				$item['items'] = array_values( $row['items'] );
+			}
+			if ( isset( $row['label'] ) ) {
+				$item['label'] = sanitize_text_field( (string) $row['label'] );
+			}
+			$out[] = $item;
+		}
+		return $out;
+	}
+
+	/**
+	 * REST get: partsOrdered.
+	 *
+	 * @param mixed $object Prepared post.
+	 * @return array
+	 */
+	public function get_parts_ordered( $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return array();
+		}
+		$raw = get_post_meta( $post_id, self::$package_parts_meta_key, true );
+		return is_array( $raw ) ? $this->sanitize_parts_array( $raw ) : array();
+	}
+
+	/**
+	 * REST update: partsOrdered — persist to package_parts meta.
+	 *
+	 * @param mixed $value  New value.
+	 * @param mixed $object Post object.
+	 * @return true|\WP_Error
+	 */
+	public function update_parts_ordered( $value, $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return new \WP_Error( 'invalid_post', 'Invalid post for partsOrdered.' );
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to edit this post.' );
+		}
+		$sanitized = $this->sanitize_parts_array( $value );
+		update_post_meta( $post_id, self::$package_parts_meta_key, $sanitized );
+		return true;
+	}
+
+	// ------------------------------------------------------------------
+	// partsEnabled  ↔  package_parts__enabled meta
+	// ------------------------------------------------------------------
+
+	/**
+	 * REST get: partsEnabled.
+	 *
+	 * @param mixed $object Prepared post.
+	 * @return bool
+	 */
+	public function get_parts_enabled( $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return false;
+		}
+		return (bool) get_post_meta( $post_id, self::$package_parts_meta_key . '__enabled', true );
+	}
+
+	/**
+	 * REST update: partsEnabled — persist to package_parts__enabled meta.
+	 *
+	 * @param mixed $value  New value.
+	 * @param mixed $object Post object.
+	 * @return true|\WP_Error
+	 */
+	public function update_parts_enabled( $value, $object ) {
+		$post_id = $this->get_post_id_from_rest_object( $object );
+		if ( $post_id <= 0 ) {
+			return new \WP_Error( 'invalid_post', 'Invalid post for partsEnabled.' );
+		}
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return new \WP_Error( 'rest_forbidden', 'Sorry, you are not allowed to edit this post.' );
+		}
+		update_post_meta( $post_id, self::$package_parts_meta_key . '__enabled', (bool) $value );
+		return true;
 	}
 }
