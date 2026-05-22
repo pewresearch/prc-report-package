@@ -43,14 +43,15 @@ define( 'PRC_REPORT_PACKAGE_BLOCKS_DIR', __DIR__ . '/build' );
 define( 'PRC_REPORT_PACKAGE_VERSION', '1.0.0' );
 define( 'PRC_REPORT_PACKAGE_ENABLED_POST_TYPES', array( 'post' ) );
 
-// Load the Jetpack Autoloader so runtime version-selection can pick the
-// highest version across all plugins that ship the same library dep
-// (see .cursor/plans/composer-shape-b-migration_0e4e9991.plan.md).
-$prc_report_package_autoloader = __DIR__ . '/vendor/autoload_packages.php';
-if ( file_exists( $prc_report_package_autoloader ) ) {
-	require_once $prc_report_package_autoloader;
+// When running inside the PRC Platform monorepo the root autoloader already
+// provides every dependency; skip per-plugin Jetpack Autoloader initialization.
+if ( ! defined( 'PRC_PLATFORM' ) ) {
+	$prc_report_package_autoloader = __DIR__ . '/vendor/autoload_packages.php';
+	if ( file_exists( $prc_report_package_autoloader ) ) {
+		require_once $prc_report_package_autoloader;
+	}
+	unset( $prc_report_package_autoloader );
 }
-unset( $prc_report_package_autoloader );
 
 /**
  * The code that runs during plugin activation.
