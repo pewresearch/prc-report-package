@@ -150,8 +150,8 @@ npm run build -w @prc/report-package
 npm run start:blocks -w @prc/report-package
 npm run start:inspector-panel -w @prc/report-package
 
-# Run Playwright tests (from monorepo root; wp-env + Playwright are centralized)
-npm run env:start
+# Run Playwright tests (from monorepo root; VIP dev-env + Playwright are centralized)
+npm run vip:start
 npm test -- tests/prc-report-package/
 ```
 
