@@ -35,9 +35,9 @@ built modules 2.51 KiB (css/mini-extract) 34.9 KiB (javascript) [built]
   javascript modules 34.9 KiB
     ./src/report-materials/index.js + 18 modules 14.7 KiB [not cacheable] [built] [code generated]
     ./src/report-pagination/index.js + 20 modules 20.2 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 3856 ms
+webpack 5.106.2 compiled successfully in 4738 ms
 
-webpack 5.106.2 compiled successfully in 31 ms
+webpack 5.106.2 compiled successfully in 121 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/report-package@1.0.0 build:inspector-panel
@@ -49,4 +49,4 @@ Entrypoint index 31.6 KiB = index.js 31.2 KiB index.asset.php 397 bytes
 orphan modules 272 KiB [orphan] 352 modules
 runtime modules 663 bytes 3 modules
 ./includes/inspector-sidebar-panel/src/index.js + 45 modules 69.2 KiB [not cacheable] [built] [code generated]
-webpack 5.106.2 compiled successfully in 4137 ms
+webpack 5.106.2 compiled successfully in 2699 ms
