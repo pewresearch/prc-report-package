@@ -111,7 +111,6 @@ export default function Parts() {
 										);
 									}}
 									options={chapterOptions}
-									__next40pxDefaultSize
 									__nextHasNoMarginBottom
 								/>
 							</div>

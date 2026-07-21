@@ -32,10 +32,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-if ( ! defined( 'DEFAULT_TECHNICAL_CONTACT' ) ) {
-	define( 'DEFAULT_TECHNICAL_CONTACT', 'webdev@pewresearch.org' );
-}
-
 define( 'PRC_REPORT_PACKAGE_FILE', __FILE__ );
 define( 'PRC_REPORT_PACKAGE_DIR', __DIR__ );
 define( 'PRC_REPORT_PACKAGE_MANIFEST_FILE', __DIR__ . '/build/block-manifest.php' );
@@ -52,27 +48,6 @@ if ( ! defined( 'PRC_PLATFORM' ) ) {
 	}
 	unset( $prc_report_package_autoloader );
 }
-
-/**
- * The code that runs during plugin activation.
- * This action is documented in includes/class-plugin-activator.php
- */
-function activate() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-plugin-activator.php';
-	Plugin_Activator::activate();
-}
-
-/**
- * The code that runs during plugin deactivation.
- * This action is documented in includes/class-plugin-deactivator.php
- */
-function deactivate() {
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-plugin-deactivator.php';
-	Plugin_Deactivator::deactivate();
-}
-
-register_activation_hook( __FILE__, '\PRC\Platform\Report_Package\activate' );
-register_deactivation_hook( __FILE__, '\PRC\Platform\Report_Package\deactivate' );
 
 /**
  * Helper utilities

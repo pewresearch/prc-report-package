@@ -14,6 +14,36 @@ namespace PRC\Platform\Report_Package;
  */
 
 /**
+ * Object cache group for assembled report package chapter lists.
+ */
+const REPORT_PACKAGE_CACHE_GROUP = 'prc_report_package';
+
+/**
+ * Cache TTL for assembled report package chapter lists.
+ */
+const REPORT_PACKAGE_CACHE_TTL = HOUR_IN_SECONDS;
+
+/**
+ * Cache key for a package parent's chapter rows.
+ *
+ * @param int $parent_id Package parent post ID.
+ * @return string
+ */
+function get_report_package_chapters_cache_key( int $parent_id ): string {
+	return 'report_package_chapters_' . $parent_id;
+}
+
+/**
+ * Delete cached chapter rows for a report package parent.
+ *
+ * @param int $parent_id Package parent post ID.
+ * @return void
+ */
+function clear_report_package_chapters_cache( int $parent_id ): void {
+	wp_cache_delete( get_report_package_chapters_cache_key( $parent_id ), REPORT_PACKAGE_CACHE_GROUP );
+}
+
+/**
  * Given a post_id, return parent's ID if this post is a child.
  *
  * @param int $post_id
@@ -124,13 +154,74 @@ function get_package_materials( $post_id ) {
  * @return array The chapter.
  */
 function construct_chapter( $chapter_id, $requesting_id ) {
-	return array(
-		'id'        => $chapter_id,
-		'title'     => html_entity_decode( get_the_title( $chapter_id ) ),
-		'slug'      => get_post_field( 'post_name', $chapter_id ),
-		'link'      => get_permalink( $chapter_id ),
-		'is_active' => $chapter_id === $requesting_id,
+	return array_merge(
+		construct_chapter_row( $chapter_id ),
+		array(
+			'is_active' => $chapter_id === $requesting_id,
+		)
 	);
+}
+
+/**
+ * Build chapter row data without the active-state flag.
+ *
+ * @param int $chapter_id The chapter id.
+ * @return array
+ */
+function construct_chapter_row( $chapter_id ) {
+	return array(
+		'id'    => $chapter_id,
+		'title' => html_entity_decode( get_the_title( $chapter_id ) ),
+		'slug'  => get_post_field( 'post_name', $chapter_id ),
+		'link'  => get_permalink( $chapter_id ),
+	);
+}
+
+/**
+ * Get cached chapter rows for a package parent (without is_active).
+ *
+ * @param int $parent_id Package parent post ID.
+ * @return array
+ */
+function get_cached_chapter_rows_for_parent( $parent_id ) {
+	$parent_id = (int) $parent_id;
+	if ( $parent_id <= 0 ) {
+		return array();
+	}
+
+	$use_cache = ! is_user_logged_in() && ! is_preview();
+	$cache_key = get_report_package_chapters_cache_key( $parent_id );
+
+	if ( $use_cache ) {
+		$cached = wp_cache_get( $cache_key, REPORT_PACKAGE_CACHE_GROUP );
+		if ( false !== $cached && is_array( $cached ) ) {
+			return $cached;
+		}
+	}
+
+	$chapters = get_post_meta( $parent_id, Rest_API::$package_chapters_meta_key, true );
+
+	if ( is_array( $chapters ) && isset( $chapters['key'] ) && isset( $chapters['postId'] ) ) {
+		$chapters = array( $chapters );
+	}
+
+	if ( empty( $chapters ) || ! is_array( $chapters ) ) {
+		return array();
+	}
+
+	$formatted_chapters = array();
+	foreach ( $chapters as $chapter ) {
+		if ( ! is_array( $chapter ) || empty( $chapter['postId'] ) ) {
+			continue;
+		}
+		$formatted_chapters[] = construct_chapter_row( (int) $chapter['postId'] );
+	}
+
+	if ( $use_cache ) {
+		wp_cache_set( $cache_key, $formatted_chapters, REPORT_PACKAGE_CACHE_GROUP, REPORT_PACKAGE_CACHE_TTL );
+	}
+
+	return $formatted_chapters;
 }
 
 /**
@@ -142,30 +233,25 @@ function construct_chapter( $chapter_id, $requesting_id ) {
  * @return array The chapters.
  */
 function get_chapters( $parent_id, $post_id ) {
-	$chapters = get_post_meta( $parent_id, Rest_API::$package_chapters_meta_key, true );
+	$parent_id = (int) $parent_id;
+	$post_id   = (int) $post_id;
+	$rows      = get_cached_chapter_rows_for_parent( $parent_id );
 
-	// Normalize chapters array structure.
-	// WordPress's preview filter can mangle revisions_enabled meta, returning a single
-	// chapter object {key, postId} instead of an array [{key, postId}].
-	// Detect and fix this malformed structure.
-	if ( is_array( $chapters ) && isset( $chapters['key'] ) && isset( $chapters['postId'] ) ) {
-		$chapters = array( $chapters );
-	}
-
-	if ( empty( $chapters ) ) {
+	if ( empty( $rows ) ) {
 		return array();
 	}
-	$formatted_chapters = array();
 
-	foreach ( $chapters as $chapter ) {
-		if ( ! is_array( $chapter ) ) {
-			continue;
-		}
-		$chapter_id           = $chapter['postId'];
-		$formatted_chapters[] = construct_chapter( $chapter_id, $post_id );
-	}
-
-	return $formatted_chapters;
+	return array_map(
+		static function ( $row ) use ( $post_id ) {
+			return array_merge(
+				$row,
+				array(
+					'is_active' => $row['id'] === $post_id,
+				)
+			);
+		},
+		$rows
+	);
 }
 
 /**

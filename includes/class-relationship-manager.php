@@ -31,9 +31,12 @@ class Relationship_Manager {
 	 */
 	public function init( $loader = null ) {
 		if ( null !== $loader ) {
-			$loader->add_action( 'prc_platform_on_incremental_save', $this, 'set_child_posts', 10, 1 );
+			$loader->add_action( 'prc_platform_on_incremental_save', $this, 'enqueue_child_post_parent_reconcile', 10, 1 );
+			$loader->add_action( 'prc_platform_async_on_incremental_save', $this, 'reconcile_child_post_parents', 10, 1 );
 			$loader->add_action( 'prc_platform_on_update', $this, 'update_children', 10, 1 );
-			$loader->add_action( 'prc_platform_on_publish', $this, 'update_children', 10, 1 );
+			$loader->add_action( 'prc_platform_on_publish', $this, 'update_children_on_publish', 10, 1 );
+			$loader->add_action( 'prc_platform_on_update', $this, 'clear_chapters_cache_on_update', 20, 1 );
+			$loader->add_action( 'prc_platform_on_publish', $this, 'clear_chapters_cache_on_update', 20, 1 );
 			$loader->add_filter(
 				'get_next_post_where',
 				$this,
@@ -48,6 +51,46 @@ class Relationship_Manager {
 				10,
 				5
 			);
+		}
+	}
+
+	/**
+	 * When a parent post is published, sync chapters then enqueue async publish side-effects
+	 * for chapters that actually transitioned into publish (pipeline was suppressed during sync).
+	 *
+	 * @hook prc_platform_on_publish
+	 *
+	 * @param mixed $post The post object.
+	 */
+	public function update_children_on_publish( $post ) {
+		$prior_statuses = array();
+		if ( is_object( $post ) && isset( $post->ID ) ) {
+			foreach ( $this->get_child_ids( (int) $post->ID ) as $child_id ) {
+				$child_id = (int) $child_id;
+				if ( $child_id > 0 ) {
+					$prior_statuses[ $child_id ] = get_post_status( $child_id );
+				}
+			}
+		}
+
+		$result = $this->update_children( $post );
+		if ( ! is_array( $result ) || empty( $result['success'] ) ) {
+			return;
+		}
+
+		if ( ! function_exists( '\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event' ) ) {
+			return;
+		}
+
+		foreach ( array_unique( array_map( 'intval', $result['success'] ) ) as $child_id ) {
+			if ( $child_id <= 0 ) {
+				continue;
+			}
+			// Already-published chapters (including no-ops) must not fan out another publish.
+			if ( isset( $prior_statuses[ $child_id ] ) && 'publish' === $prior_statuses[ $child_id ] ) {
+				continue;
+			}
+			\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event( $child_id, 'publish' );
 		}
 	}
 
@@ -88,96 +131,255 @@ class Relationship_Manager {
 		$errors  = array();
 		$success = array();
 
-		foreach ( $children as $child_id ) {
-			$new_updates = array(
-				'ID'          => $child_id,
-				'post_status' => $parent_post_status,
-				'post_date'   => $parent_post_date,
-			);
+		// Suppress nested prc_platform_on_* fan-out while mirroring chapter fields.
+		$skip_pipeline = static function () {
+			return false;
+		};
+		add_filter( 'prc_platform_post_publish_pipeline_should_process', $skip_pipeline );
 
-			// Update the child post to match the parent post.
-			$child_updated = wp_update_post( $new_updates, true );
+		try {
+			foreach ( $children as $child_id ) {
+				$child_id = (int) $child_id;
+				if ( $child_id <= 0 ) {
+					continue;
+				}
 
-			$terms_updated = false;
-			if ( ! is_wp_error( $child_updated ) ) {
-				foreach ( $parent_post_taxonomy_terms  as $taxonomy => $terms ) {
+				$child_status = get_post_status( $child_id );
+				$child_date   = get_post_field( 'post_date', $child_id );
+				$needs_post_update = (
+					$child_status !== $parent_post_status ||
+					$child_date !== $parent_post_date
+				);
+
+				$taxonomies_to_update = array();
+				foreach ( $parent_post_taxonomy_terms as $taxonomy => $parent_terms ) {
+					$child_terms = wp_get_post_terms( $child_id, $taxonomy, array( 'fields' => 'ids' ) );
+					if ( is_wp_error( $child_terms ) ) {
+						$errors[] = new WP_Error(
+							'post-report-package::failed-to-read-child-post-terms',
+							'Failed to read child post terms.',
+							$child_terms
+						);
+						continue;
+					}
+					if ( ! $this->term_ids_match( $parent_terms, $child_terms ) ) {
+						$taxonomies_to_update[ $taxonomy ] = $parent_terms;
+					}
+				}
+
+				if ( ! $needs_post_update && empty( $taxonomies_to_update ) ) {
+					$success[] = $child_id;
+					continue;
+				}
+
+				$child_updated = $child_id;
+				if ( $needs_post_update ) {
+					$child_updated = wp_update_post(
+						array(
+							'ID'          => $child_id,
+							'post_status' => $parent_post_status,
+							'post_date'   => $parent_post_date,
+						),
+						true
+					);
+				}
+
+				if ( is_wp_error( $child_updated ) ) {
+					$errors[] = new WP_Error(
+						'post-report-package::failed-to-update-child-post-state',
+						'Failed to update child post state.',
+						$child_updated
+					);
+					continue;
+				}
+
+				$success[] = $child_updated;
+
+				foreach ( $taxonomies_to_update as $taxonomy => $terms ) {
 					$terms_updated = wp_set_post_terms( $child_updated, $terms, $taxonomy );
+					if ( is_wp_error( $terms_updated ) ) {
+						$errors[] = new WP_Error(
+							'post-report-package::failed-to-update-child-post-terms',
+							'Failed to update child post terms.',
+							$terms_updated
+						);
+					}
 				}
 			}
-
-			if ( is_wp_error( $child_updated ) ) {
-				$errors[] = new WP_Error( 'post-report-package::failed-to-update-child-post-state', 'Failed to update child post state.', $child_updated );
-			} else {
-				$success[] = $child_updated;
-			}
-			if ( is_wp_error( $terms_updated ) ) {
-				$errors[] = new WP_Error( 'post-report-package::failed-to-update-child-post-terms', 'Failed to update child post terms.', $terms_updated );
-			}
+		} finally {
+			remove_filter( 'prc_platform_post_publish_pipeline_should_process', $skip_pipeline );
 		}
 
-		$to_return = array(
+		return array(
 			'success' => $success,
 			'errors'  => $errors,
 		);
-
-		return $to_return;
 	}
 
 	/**
-	 * Assigns a child post to a parent post.
-	 *
-	 * @param int $child_post_id The child post id.
-	 * @param int $parent_post_id The parent post id.
-	 *
-	 * @return int|WP_Error
-	 */
-	public function assign_child_to_parent( $child_post_id, $parent_post_id ) {
-		$updated = wp_update_post(
-			array(
-				'ID'          => $child_post_id,
-				'post_parent' => $parent_post_id,
-			),
-			true
-		);
-		if ( is_wp_error( $updated ) ) {
-			return new WP_Error( 'post-report-package::failed-to-assign-child', 'Failed to assign child post to parent.', $updated );
-		}
-		return $updated;
-	}
-
-	/**
-	 * On incremental saves assigns the child posts to the parent.
+	 * Enqueue async reconciliation of chapter post_parent values after an incremental save.
 	 *
 	 * @hook prc_platform_on_incremental_save
 	 *
 	 * @param mixed $post The post object.
 	 */
-	public function set_child_posts( $post ) {
-		if ( ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES ) && 0 !== wp_get_post_parent_id( $post->ID ) ) {
+	public function enqueue_child_post_parent_reconcile( $post ) {
+		if ( ! $this->is_report_package_root( $post ) ) {
 			return;
 		}
-		if ( get_post_meta( $post->ID, '_prc_fork_parent', true ) ) {
+
+		// Always enqueue: sync incremental_save runs before REST persists meta.
+		if ( ! function_exists( '\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event' ) ) {
 			return;
 		}
-		$errors   = array();
-		$success  = array();
-		$chapters = get_post_meta( $post->ID, Rest_API::$package_chapters_meta_key, true );
-		if ( empty( $chapters ) ) {
+
+		\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event( (int) $post->ID, 'incremental_save' );
+	}
+
+	/**
+	 * Assign post_parent for listed chapters and clear it for detached chapters.
+	 *
+	 * @hook prc_platform_async_on_incremental_save
+	 *
+	 * @param mixed $post The post object.
+	 */
+	public function reconcile_child_post_parents( $post ) {
+		if ( ! $this->is_report_package_root( $post ) ) {
 			return;
 		}
-		foreach ( $chapters as $chapter ) {
-			$assigned = $this->assign_child_to_parent( $chapter['postId'], $post->ID );
-			if ( is_wp_error( $assigned ) ) {
-				$errors[] = $assigned;
-			} else {
-				$success[] = $assigned;
+
+		$parent_id        = (int) $post->ID;
+		$post_type        = $post->post_type;
+		$desired_ids      = $this->get_desired_chapter_ids( $parent_id );
+		$desired_lookup   = array_fill_keys( $desired_ids, true );
+		$current_child_ids = $this->get_current_child_post_ids( $parent_id, $post_type );
+
+		$skip_pipeline = static function () {
+			return false;
+		};
+		add_filter( 'prc_platform_post_publish_pipeline_should_process', $skip_pipeline );
+
+		try {
+			foreach ( $desired_ids as $child_id ) {
+				if ( (int) wp_get_post_parent_id( $child_id ) === $parent_id ) {
+					continue;
+				}
+
+				wp_update_post(
+					array(
+						'ID'          => $child_id,
+						'post_parent' => $parent_id,
+					),
+					true
+				);
 			}
+
+			foreach ( $current_child_ids as $child_id ) {
+				if ( isset( $desired_lookup[ $child_id ] ) ) {
+					continue;
+				}
+
+				if ( (int) wp_get_post_parent_id( $child_id ) !== $parent_id ) {
+					continue;
+				}
+
+				wp_update_post(
+					array(
+						'ID'          => $child_id,
+						'post_parent' => 0,
+					),
+					true
+				);
+			}
+		} finally {
+			remove_filter( 'prc_platform_post_publish_pipeline_should_process', $skip_pipeline );
 		}
-		// we should run through successes and do the updates then...
-		return array(
-			'success' => $success,
-			'errors'  => $errors,
+	}
+
+	/**
+	 * Whether the post is a report-package root (not a chapter or fork).
+	 *
+	 * @param mixed $post Post object.
+	 * @return bool
+	 */
+	private function is_report_package_root( $post ) {
+		if ( ! is_object( $post ) || ! isset( $post->ID, $post->post_type ) ) {
+			return false;
+		}
+
+		if ( ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES, true ) ) {
+			return false;
+		}
+
+		if ( 0 !== wp_get_post_parent_id( (int) $post->ID ) ) {
+			return false;
+		}
+
+		if ( get_post_meta( $post->ID, '_prc_fork_parent', true ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Chapter IDs listed in multiSectionReport meta.
+	 *
+	 * @param int $parent_id Parent post ID.
+	 * @return int[]
+	 */
+	private function get_desired_chapter_ids( $parent_id ) {
+		$parent_id = (int) $parent_id;
+		$ids       = array_map( 'intval', $this->get_child_ids( $parent_id ) );
+
+		return array_values(
+			array_filter(
+				$ids,
+				static function ( $id ) use ( $parent_id ) {
+					return $id > 0 && $id !== $parent_id;
+				}
+			)
 		);
+	}
+
+	/**
+	 * Post IDs that currently have post_parent set to the package root.
+	 *
+	 * @param int    $parent_id Parent post ID.
+	 * @param string $post_type Post type.
+	 * @return int[]
+	 */
+	private function get_current_child_post_ids( $parent_id, $post_type ) {
+		$child_ids = get_posts(
+			array(
+				'post_type'      => $post_type,
+				'post_parent'    => (int) $parent_id,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'orderby'        => 'ID',
+				'order'          => 'ASC',
+			)
+		);
+
+		return array_map( 'intval', (array) $child_ids );
+	}
+
+	/**
+	 * Compare two term ID lists for equality (order-independent).
+	 *
+	 * @param array $a Term IDs.
+	 * @param array $b Term IDs.
+	 * @return bool
+	 */
+	private function term_ids_match( $a, $b ) {
+		$normalize = static function ( $ids ) {
+			$ids = array_map( 'intval', (array) $ids );
+			$ids = array_values( array_unique( $ids ) );
+			sort( $ids, SORT_NUMERIC );
+			return $ids;
+		};
+		return $normalize( $a ) === $normalize( $b );
 	}
 
 	/**
@@ -254,5 +456,20 @@ class Relationship_Manager {
 	 */
 	public function filter_prev_post( $where, $in_same_term, $excluded_terms, $taxonomy, $post ) {
 		return $this->filter_adjacent_post( $where, $post, 'previous_post' );
+	}
+
+	/**
+	 * Clear cached chapter rows when a report package or chapter changes.
+	 *
+	 * @hook prc_platform_on_update
+	 * @hook prc_platform_on_publish
+	 * @param \WP_Post $post Post object.
+	 * @return void
+	 */
+	public function clear_chapters_cache_on_update( $post ) {
+		if ( ! $post instanceof \WP_Post || ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES, true ) ) {
+			return;
+		}
+		clear_report_package_chapters_cache( get_package_id( (int) $post->ID ) );
 	}
 }

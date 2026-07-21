@@ -5,8 +5,8 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 ## What it does
 
 - Stores chapter ordering (`multiSectionReport` meta), materials (`reportMaterials` meta), and TOC part groupings (`package_parts` meta) on `post` objects
-- Syncs child posts to their parent on save: mirrors `post_status`, `post_date`, and all taxonomy terms
-- Sets `post_parent` for chapter posts on incremental save, enforcing the WordPress parent/child hierarchy
+- Syncs child posts to their parent on save: mirrors `post_status`, `post_date`, and all taxonomy terms (skips no-op writes and suppresses nested post-publish pipeline fan-out during sync)
+- Sets `post_parent` for chapter posts on incremental save via async reconciliation: assigns listed chapters and clears `post_parent` on detached chapters
 - Overrides `get_next_post_where` and `get_previous_post_where` so that adjacent-post navigation stays within the package sequence
 - Exposes `table_of_contents`, `report_materials`, `report_pagination`, and `parent_info` as REST fields on all public post types (or `post` where applicable)
 - Registers a block editor sidebar plugin ("Report Package") with panels for managing chapters and materials without leaving the editor
@@ -22,7 +22,7 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 | `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\BlockUtils\load_blocks`                                         |
 | `includes/class-loader.php`                       | Hook registration queue (standard PRC loader pattern)                                                                                   |
 | `includes/class-rest-api.php`                     | Registers post meta fields and REST fields; defines meta key constants                                                                  |
-| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; overrides adjacent-post WHERE clauses                                                       |
+| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses |
 | `includes/class-wp-admin.php`                     | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts                                                          |
 | `includes/class-distributor.php`                  | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration                        |
 | `includes/utils.php`                              | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
@@ -50,18 +50,20 @@ Both blocks are dynamic (PHP-rendered), use `postId` context, and support color,
 | `init`                              | Registers post meta fields, block types, and Distributor data handlers                                        |
 | `rest_api_init`                     | Registers REST fields (`table_of_contents`, `report_materials`, `report_pagination`, `parent_info`) on `post` |
 | `enqueue_block_editor_assets`       | Enqueues the inspector sidebar panel script for enabled post types                                            |
-| `prc_platform_on_incremental_save`  | Sets `post_parent` on all chapter posts listed in `multiSectionReport` meta                                   |
-| `prc_platform_on_update`            | Propagates parent's `post_status`, `post_date`, and taxonomy terms to all chapters                            |
-| `prc_platform_on_publish`           | Same as `prc_platform_on_update`                                                                              |
+| `prc_platform_on_incremental_save`  | Enqueues async reconcile of chapter `post_parent` (assign listed chapters, clear detached)                    |
+| `prc_platform_async_on_incremental_save` | Reconciles chapter `post_parent` from `multiSectionReport` meta (server-side via Action Scheduler)       |
+| `prc_platform_on_update`            | Propagates parent's `post_status`, `post_date`, and taxonomy terms to chapters (skips no-ops; suppresses nested pipeline) |
+| `prc_platform_on_publish`           | Same as `prc_platform_on_update`, then enqueues async publish side-effects for each chapter |
 | `dt_process_distributor_attributes` | Restores `post_parent` relationships on the target site after Distributor push                                |
 
 ### Filters consumed
 
-| Hook                      | Direction | Description                                                                                                  |
-| ------------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
-| `get_next_post_where`     | Filter    | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order |
-| `get_previous_post_where` | Filter    | Same as above for `get_previous_post()`                                                                      |
-| `the_title`               | Filter    | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts                                       |
+| Hook                                                 | Direction | Description                                                                                                  |
+| ---------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
+| `prc_platform_post_publish_pipeline_should_process`  | Filter    | Temporarily returns `false` during `update_children` so chapter `wp_update_post` calls do not re-enter the sync or async pipeline |
+| `get_next_post_where`                                | Filter    | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order |
+| `get_previous_post_where`                            | Filter    | Same as above for `get_previous_post()`                                                                      |
+| `the_title`                                          | Filter    | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts                                       |
 
 ### Filters provided
 
