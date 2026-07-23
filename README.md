@@ -154,7 +154,7 @@ npm run start:inspector-panel -w @prc/report-package
 
 # Run Playwright tests (from monorepo root; VIP dev-env + Playwright are centralized)
 npm run vip:start
-npm test -- tests/prc-report-package/
+npm test -- tests/prc-report-package/e2e/
 ```
 
 The inspector panel (`includes/inspector-sidebar-panel/`) and the blocks (`src/report-materials/`, `src/report-pagination/`) have separate build pipelines. Both are invoked by the top-level `build` script.
