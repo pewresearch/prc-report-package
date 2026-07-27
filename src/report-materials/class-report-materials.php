@@ -47,10 +47,13 @@ class Report_Materials {
 	 * @return string
 	 */
 	public function get_item_label( $item ) {
+		if ( ! is_array( $item ) ) {
+			return 'Unknown';
+		}
 		if ( array_key_exists( 'label', $item ) && ! empty( $item['label'] ) ) {
 			return $item['label'];
 		}
-		switch ( $item['type'] ) {
+		switch ( $item['type'] ?? '' ) {
 			case 'detailTable':
 			case 'detailedTable':
 				return 'Data Table';
@@ -88,7 +91,10 @@ class Report_Materials {
 	 * @return string
 	 */
 	public function get_item_icon( $item ) {
-		$icon_slug = array_key_exists( 'icon', $item ) ? $item['icon'] : $item['type'];
+		if ( ! is_array( $item ) ) {
+			return 'file';
+		}
+		$icon_slug = array_key_exists( 'icon', $item ) ? $item['icon'] : ( $item['type'] ?? '' );
 		switch ( $icon_slug ) {
 			case 'detailTable':
 			case 'detailedTable':
@@ -175,6 +181,15 @@ class Report_Materials {
 		$list_item_classnames = 'wp-block-prc-block-report-materials__list-item flex-align-center';
 
 		foreach ( $materials as $material ) {
+			// Skip malformed rows (e.g. empty-string meta cast to array( '' )).
+			if ( ! is_array( $material ) ) {
+				continue;
+			}
+			$type = $material['type'] ?? '';
+			$url  = $material['url'] ?? '';
+			if ( empty( $type ) || empty( $url ) ) {
+				continue;
+			}
 			$icon     = \PRC\Platform\Icons\render(
 				'solid',
 				$this->get_item_icon( $material )
@@ -182,11 +197,16 @@ class Report_Materials {
 			$content .= wp_sprintf(
 				'<li class="%1$s" data-material-type="%2$s">%3$s<a href="%4$s" target="_blank">%5$s</a></li>',
 				$list_item_classnames,
-				$material['type'],
+				$type,
 				$icon,
-				$material['url'],
+				$url,
 				$this->get_item_label( $material )
 			);
+		}
+
+		// All rows were skipped (malformed / incomplete); match empty($materials).
+		if ( empty( $content ) ) {
+			return '';
 		}
 
 		$block_attrs = get_block_wrapper_attributes(

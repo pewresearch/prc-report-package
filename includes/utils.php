@@ -122,11 +122,22 @@ function get_package_materials( $post_id ) {
 		$materials = array( $materials );
 	}
 
+	// get_post_meta( ..., true ) returns '' when the key is absent. Casting '' to
+	// an array yields array( '' ), which later fatals in the Report Materials
+	// render loop (array_key_exists on a string). Normalize non-arrays to [].
+	if ( ! is_array( $materials ) ) {
+		$materials = array();
+	}
+
 	$materials = apply_filters(
 		'prc_platform_post_report_package_materials',
 		$materials,
 		$post_id,
 	);
+
+	if ( ! is_array( $materials ) ) {
+		$materials = array();
+	}
 
 	// If Print Engine beta is active, display the Print Engine beta activation link first.
 	if ( true == get_query_var( 'printEngineBeta', false ) ) {
@@ -139,7 +150,7 @@ function get_package_materials( $post_id ) {
 		);
 		$materials             = array_merge(
 			$print_engine_material,
-			(array) $materials // ensure $materials is always array
+			$materials
 		);
 	}
 
