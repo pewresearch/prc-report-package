@@ -1,5 +1,7 @@
 # PRC Report Package
 
+> Canonical docs: [docs/plugins/prc-report-package/](../../docs/plugins/prc-report-package/)
+
 Manages multi-post research report packages on the PRC Platform. A report package is a parent post linked to one or more chapter (child) posts, with shared taxonomy terms, publication dates, associated materials, and a table of contents. The plugin handles relationship enforcement, REST exposure, block editor UI, two frontend blocks, and Distributor-based cross-site distribution.
 
 ## What it does

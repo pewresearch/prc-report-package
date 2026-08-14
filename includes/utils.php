@@ -139,13 +139,17 @@ function get_package_materials( $post_id ) {
 		$materials = array();
 	}
 
-	// If Print Engine beta is active, display the Print Engine beta activation link first.
-	if ( true == get_query_var( 'printEngineBeta', false ) ) {
+	// Prepend Print / PDF when print engine is available and the viewer is logged in.
+	if (
+		post_type_supports( get_post_type( $post_id ), 'prc-print-engine' )
+		&& class_exists( \PRC\Platform\Print_Engine\Print_Access::class )
+		&& \PRC\Platform\Print_Engine\Print_Access::audience_may_see_print_ui()
+	) {
 		$print_engine_material = array(
 			array(
 				'type'  => 'printEngineBeta',
 				'label' => 'Print Engine (Beta)',
-				'url'   => get_permalink( $post_id ) . '?pdf=true',
+				'url'   => trailingslashit( get_permalink( $post_id ) ) . 'print',
 			),
 		);
 		$materials             = array_merge(
