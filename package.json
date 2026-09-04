@@ -1,6 +1,6 @@
 {
 	"name": "@prc/report-package",
-	"version": "1.1.1",
+	"version": "1.1.0",
 	"description": "PRC Report Package is a module for PRC Platform that manages report package relationships and materials.",
 	"scripts": {
 		"build": "npm run build:blocks && npm run build:inspector-panel",

@@ -1,9 +1,9 @@
 
-> @prc/report-package@1.1.1 build
+> @prc/report-package@1.1.0 build
 > npm run build:blocks && npm run build:inspector-panel
 
 
-> @prc/report-package@1.1.1 build:blocks
+> @prc/report-package@1.1.0 build:blocks
 > wp-scripts build --experimental-modules --webpack-copy-php && wp-scripts build-blocks-manifest
 
 assets by path [1m[32mreport-pagination/[39m[22m 21.1 KiB
@@ -35,12 +35,12 @@ built modules 2.51 KiB (css/mini-extract) 34.9 KiB (javascript) [1m[33m[built]
   javascript modules 34.9 KiB
     [1m./src/report-materials/index.js + 18 modules[39m[22m 14.7 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
     [1m./src/report-pagination/index.js + 20 modules[39m[22m 20.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1695 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6702 ms
 
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 84 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 184 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
-> @prc/report-package@1.1.1 build:inspector-panel
+> @prc/report-package@1.1.0 build:inspector-panel
 > wp-scripts build --source-path=includes/inspector-sidebar-panel/src --output-path=includes/inspector-sidebar-panel/build
 
 asset [1m[32mindex.js[39m[22m 31.2 KiB [1m[32m[emitted][39m[22m [1m[32m[minimized][39m[22m (name: index)
@@ -49,4 +49,4 @@ Entrypoint [1mindex[39m[22m 31.6 KiB = [1m[32mindex.js[39m[22m 31.2 KiB 
 orphan modules 272 KiB [1m[33m[orphan][39m[22m 352 modules
 runtime modules 663 bytes 3 modules
 [1m./includes/inspector-sidebar-panel/src/index.js + 45 modules[39m[22m 69.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 1900 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 5632 ms
