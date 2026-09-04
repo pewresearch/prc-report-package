@@ -50,10 +50,14 @@ class Report_Materials {
 		if ( ! is_array( $item ) ) {
 			return 'Unknown';
 		}
-		if ( array_key_exists( 'label', $item ) && ! empty( $item['label'] ) ) {
+		if ( array_key_exists( 'label', $item ) && is_string( $item['label'] ) && '' !== $item['label'] ) {
 			return $item['label'];
 		}
-		switch ( $item['type'] ?? '' ) {
+		$type = $item['type'] ?? '';
+		if ( ! is_string( $type ) ) {
+			return 'Unknown';
+		}
+		switch ( $type ) {
 			case 'detailTable':
 			case 'detailedTable':
 				return 'Data Table';
@@ -95,6 +99,9 @@ class Report_Materials {
 			return 'file';
 		}
 		$icon_slug = array_key_exists( 'icon', $item ) ? $item['icon'] : ( $item['type'] ?? '' );
+		if ( ! is_string( $icon_slug ) ) {
+			return 'file';
+		}
 		switch ( $icon_slug ) {
 			case 'detailTable':
 			case 'detailedTable':
@@ -129,8 +136,8 @@ class Report_Materials {
 	/**
 	 * Generate CSS custom properties for color styles
 	 *
-	 * @param array $attributes Block attributes
-	 * @return string CSS string with color custom properties
+	 * @param array $attributes Block attributes.
+	 * @return string CSS string with color custom properties.
 	 */
 	private function generate_styles( array $attributes ): string {
 		$hover_bg    = $attributes['customHoverBackgroundColor'] ?? '';
@@ -187,7 +194,7 @@ class Report_Materials {
 			}
 			$type = $material['type'] ?? '';
 			$url  = $material['url'] ?? '';
-			if ( empty( $type ) || empty( $url ) ) {
+			if ( ! is_string( $type ) || ! is_string( $url ) || '' === $type || '' === $url ) {
 				continue;
 			}
 			$icon     = \PRC\Platform\Icons\render(
@@ -222,7 +229,7 @@ class Report_Materials {
 			$content
 		);
 
-		// Use WP_HTML_Tag_Processor to append color styles to existing style attribute
+		// Use WP_HTML_Tag_Processor to append color styles to existing style attribute.
 		$tag_processor = new \WP_HTML_Tag_Processor( $output );
 		if ( $tag_processor->next_tag( array( 'class_name' => 'wp-block-prc-block-report-materials' ) ) ) {
 			$style  = (string) $tag_processor->get_attribute( 'style' );

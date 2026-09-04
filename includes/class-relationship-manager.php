@@ -463,11 +463,11 @@ class Relationship_Manager {
 	 *
 	 * @hook prc_platform_on_update
 	 * @hook prc_platform_on_publish
-	 * @param \WP_Post $post Post object.
+	 * @param object $post Post-like object from the publish pipeline.
 	 * @return void
 	 */
 	public function clear_chapters_cache_on_update( $post ) {
-		if ( ! $post instanceof \WP_Post || ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES, true ) ) {
+		if ( ! is_object( $post ) || empty( $post->ID ) || ! in_array( $post->post_type, PRC_REPORT_PACKAGE_ENABLED_POST_TYPES, true ) ) {
 			return;
 		}
 		clear_report_package_chapters_cache( get_package_id( (int) $post->ID ) );
