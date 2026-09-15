@@ -197,17 +197,21 @@ class Report_Materials {
 			if ( ! is_string( $type ) || ! is_string( $url ) || '' === $type || '' === $url ) {
 				continue;
 			}
+			$safe_url = esc_url( $url );
+			if ( '' === $safe_url ) {
+				continue;
+			}
 			$icon     = \PRC\Platform\Icons\render(
-				'solid',
+				'prc',
 				$this->get_item_icon( $material )
 			);
 			$content .= wp_sprintf(
 				'<li class="%1$s" data-material-type="%2$s">%3$s<a href="%4$s" target="_blank">%5$s</a></li>',
-				$list_item_classnames,
-				$type,
+				esc_attr( $list_item_classnames ),
+				esc_attr( $type ),
 				$icon,
-				$url,
-				$this->get_item_label( $material )
+				$safe_url,
+				esc_html( $this->get_item_label( $material ) )
 			);
 		}
 

@@ -124,6 +124,234 @@ class Rest_API {
 		$loader->add_action( 'init', $this, 'register_meta_fields' );
 		$loader->add_action( 'rest_api_init', $this, 'register_rest_fields' );
 		$loader->add_action( 'rest_api_init', $this, 'register_writable_rest_fields' );
+		$loader->add_action( 'rest_api_init', $this, 'register_toplines_route' );
+	}
+
+	/**
+	 * Register the public catalog of published topline PDFs.
+	 *
+	 * @hook rest_api_init
+	 */
+	public function register_toplines_route() {
+		register_rest_route(
+			'prc-api/v3',
+			'report-package/toplines',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'get_toplines' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'page'     => array(
+						'description'       => 'Current page of the collection.',
+						'type'              => 'integer',
+						'default'           => 1,
+						'minimum'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'per_page' => array(
+						'description'       => 'Maximum number of posts to query per page.',
+						'type'              => 'integer',
+						'default'           => 20,
+						'minimum'           => 1,
+						'maximum'           => 100,
+						'sanitize_callback' => array( $this, 'sanitize_toplines_per_page' ),
+					),
+					'year'     => array(
+						'description'       => 'Filter by post publish year.',
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => array( $this, 'sanitize_toplines_year_month' ),
+						'validate_callback' => array( $this, 'validate_toplines_year' ),
+					),
+					'month'    => array(
+						'description'       => 'Filter by post publish month (1–12). Requires year.',
+						'type'              => 'integer',
+						'required'          => false,
+						'sanitize_callback' => array( $this, 'sanitize_toplines_year_month' ),
+						'validate_callback' => array( $this, 'validate_toplines_month' ),
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Clamp per_page to 1–100.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return int
+	 */
+	public function sanitize_toplines_per_page( $value ) {
+		$per_page = absint( $value );
+		if ( $per_page < 1 ) {
+			return 20;
+		}
+		return min( 100, $per_page );
+	}
+
+	/**
+	 * Sanitize optional year/month query args.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return int|null
+	 */
+	public function sanitize_toplines_year_month( $value ) {
+		if ( null === $value || '' === $value ) {
+			return null;
+		}
+		return absint( $value );
+	}
+
+	/**
+	 * Validate the year query arg.
+	 *
+	 * @param mixed            $value   Sanitized value.
+	 * @param \WP_REST_Request $request Request.
+	 * @param string           $param   Parameter name.
+	 * @return true|\WP_Error
+	 */
+	public function validate_toplines_year( $value, $request, $param ) {
+		unset( $request, $param );
+		if ( null === $value ) {
+			return true;
+		}
+		if ( $value < 1 ) {
+			return new \WP_Error(
+				'rest_invalid_param',
+				'year must be a positive integer.',
+				array( 'status' => 400 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Validate the month query arg.
+	 *
+	 * @param mixed            $value   Sanitized value.
+	 * @param \WP_REST_Request $request Request.
+	 * @param string           $param   Parameter name.
+	 * @return true|\WP_Error
+	 */
+	public function validate_toplines_month( $value, $request, $param ) {
+		unset( $param );
+		if ( null === $value ) {
+			return true;
+		}
+		if ( null === $request->get_param( 'year' ) ) {
+			return new \WP_Error(
+				'rest_invalid_param',
+				'month requires year.',
+				array( 'status' => 400 )
+			);
+		}
+		if ( $value < 1 || $value > 12 ) {
+			return new \WP_Error(
+				'rest_invalid_param',
+				'month must be between 1 and 12.',
+				array( 'status' => 400 )
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Enforce per-IP rate limiting for the public toplines catalog.
+	 *
+	 * @param string $endpoint_key Unique key for this endpoint bucket.
+	 * @return true|\WP_Error
+	 */
+	private function enforce_ip_rate_limit( string $endpoint_key ) {
+		if ( ! function_exists( '\\PRC\\Platform\\rate_limit_hit' ) ) {
+			return true;
+		}
+
+		$ip = function_exists( '\\PRC\\Platform\\get_client_ip' )
+			? \PRC\Platform\get_client_ip()
+			: '';
+
+		$ip = (string) apply_filters( 'prc_report_package_toplines_client_ip', $ip );
+
+		if ( '' === $ip ) {
+			return true;
+		}
+
+		if ( \PRC\Platform\rate_limit_hit(
+			'report_package_' . $endpoint_key . '_' . md5( $ip ),
+			30,
+			MINUTE_IN_SECONDS,
+			'prc_report_package_throttle'
+		) ) {
+			return new \WP_Error(
+				'rate_limited',
+				'Too many requests. Please try again later.',
+				array( 'status' => 429 )
+			);
+		}
+
+		return true;
+	}
+
+	/**
+	 * GET /prc-api/v3/report-package/toplines
+	 *
+	 * Pagination is by published posts that have a topline material. A post
+	 * with two toplines contributes two items on the same page.
+	 *
+	 * @param \WP_REST_Request $request Request.
+	 * @return \WP_REST_Response|\WP_Error
+	 */
+	public function get_toplines( $request ) {
+		$throttled = $this->enforce_ip_rate_limit( 'toplines' );
+		if ( is_wp_error( $throttled ) ) {
+			return $throttled;
+		}
+
+		$page     = max( 1, (int) $request->get_param( 'page' ) );
+		$per_page = $this->sanitize_toplines_per_page( $request->get_param( 'per_page' ) );
+		$year     = $request->get_param( 'year' );
+		$month    = $request->get_param( 'month' );
+
+		$query_args = array(
+			'post_type'              => 'post',
+			'post_status'            => 'publish',
+			'posts_per_page'         => $per_page,
+			'paged'                  => $page,
+			'fields'                 => 'ids',
+			'ignore_sticky_posts'    => true,
+			'no_found_rows'          => false,
+			'update_post_meta_cache' => true,
+			'update_post_term_cache' => false,
+			'orderby'                => 'date',
+			'order'                  => 'DESC',
+			'meta_query'             => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query
+				array(
+					'key'     => self::$package_materials_meta_key,
+					'value'   => 's:4:"type";s:7:"topline"',
+					'compare' => 'LIKE',
+				),
+			),
+		);
+
+		if ( null !== $year ) {
+			$query_args['year'] = (int) $year;
+		}
+		if ( null !== $month ) {
+			$query_args['monthnum'] = (int) $month;
+		}
+
+		$query = new \WP_Query( $query_args );
+
+		$items = array();
+		foreach ( $query->posts as $post_id ) {
+			$items = array_merge( $items, get_topline_materials_for_post( (int) $post_id ) );
+		}
+
+		$response = rest_ensure_response( $items );
+		$response->header( 'X-WP-Total', (string) (int) $query->found_posts );
+		$response->header( 'X-WP-TotalPages', (string) (int) $query->max_num_pages );
+
+		return $response;
 	}
 
 	/**
@@ -160,9 +388,8 @@ class Rest_API {
 						),
 					),
 				),
-				'auth_callback'     => function () {
-					return current_user_can( 'edit_posts' );
-				},
+				'sanitize_callback' => array( $this, 'sanitize_materials_array' ),
+				'auth_callback'     => array( $this, 'authorize_materials_meta' ),
 				'revisions_enabled' => true,
 			)
 		);
@@ -270,6 +497,8 @@ class Rest_API {
 		);
 
 		/**
+		 * Parent info for child posts.
+		 *
 		 * @TODO: We should move this somewhere more genreal...
 		 */
 		register_rest_field(
@@ -429,12 +658,32 @@ class Rest_API {
 	// ------------------------------------------------------------------
 
 	/**
+	 * Authorize writes to reportMaterials meta.
+	 *
+	 * @param bool   $allowed   Whether the user can add the object meta.
+	 * @param string $meta_key  Meta key.
+	 * @param int    $object_id Object ID.
+	 * @return bool
+	 */
+	public function authorize_materials_meta( $allowed, $meta_key, $object_id ) {
+		unset( $allowed, $meta_key );
+		$object_id = (int) $object_id;
+		if ( $object_id > 0 ) {
+			return current_user_can( 'edit_post', $object_id );
+		}
+		return current_user_can( 'edit_posts' );
+	}
+
+	/**
 	 * Sanitize materials array.
+	 *
+	 * Neutralizes javascript: and other disallowed URL protocols via esc_url_raw,
+	 * and strips tags from text fields. Used as the reportMaterials sanitize_callback.
 	 *
 	 * @param mixed $value Raw value.
 	 * @return array
 	 */
-	private function sanitize_materials_array( $value ) {
+	public function sanitize_materials_array( $value ) {
 		if ( ! is_array( $value ) ) {
 			return array();
 		}

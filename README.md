@@ -24,7 +24,7 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 | `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\BlockUtils\load_blocks`                                         |
 | `includes/class-loader.php`                       | Hook registration queue (standard PRC loader pattern)                                                                                   |
 | `includes/class-rest-api.php`                     | Registers post meta fields and REST fields; defines meta key constants                                                                  |
-| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses |
+| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses             |
 | `includes/class-wp-admin.php`                     | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts                                                          |
 | `includes/class-distributor.php`                  | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration                        |
 | `includes/utils.php`                              | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
@@ -47,35 +47,36 @@ Both blocks are dynamic (PHP-rendered), use `postId` context, and support color,
 
 ### Actions consumed
 
-| Hook                                | Description                                                                                                   |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `init`                              | Registers post meta fields, block types, and Distributor data handlers                                        |
-| `rest_api_init`                     | Registers REST fields (`table_of_contents`, `report_materials`, `report_pagination`, `parent_info`) on `post` |
-| `enqueue_block_editor_assets`       | Enqueues the inspector sidebar panel script for enabled post types                                            |
-| `prc_platform_on_incremental_save`  | Enqueues async reconcile of chapter `post_parent` (assign listed chapters, clear detached)                    |
-| `prc_platform_async_on_incremental_save` | Reconciles chapter `post_parent` from `multiSectionReport` meta (server-side via Action Scheduler)       |
-| `prc_platform_on_update`            | Propagates parent's `post_status`, `post_date`, and taxonomy terms to chapters (skips no-ops; suppresses nested pipeline) |
-| `prc_platform_on_publish`           | Same as `prc_platform_on_update`, then enqueues async publish side-effects for each chapter |
-| `dt_process_distributor_attributes` | Restores `post_parent` relationships on the target site after Distributor push                                |
+| Hook                                     | Description                                                                                                               |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `init`                                   | Registers post meta fields, block types, and Distributor data handlers                                                    |
+| `rest_api_init`                          | Registers REST fields (`table_of_contents`, `report_materials`, `report_pagination`, `parent_info`) on `post`             |
+| `enqueue_block_editor_assets`            | Enqueues the inspector sidebar panel script for enabled post types                                                        |
+| `prc_platform_on_incremental_save`       | Enqueues async reconcile of chapter `post_parent` (assign listed chapters, clear detached)                                |
+| `prc_platform_async_on_incremental_save` | Reconciles chapter `post_parent` from `multiSectionReport` meta (server-side via Action Scheduler)                        |
+| `prc_platform_on_update`                 | Propagates parent's `post_status`, `post_date`, and taxonomy terms to chapters (skips no-ops; suppresses nested pipeline) |
+| `prc_platform_on_publish`                | Same as `prc_platform_on_update`, then enqueues async publish side-effects for each chapter                               |
+| `dt_process_distributor_attributes`      | Restores `post_parent` relationships on the target site after Distributor push                                            |
 
 ### Filters consumed
 
-| Hook                                                 | Direction | Description                                                                                                  |
-| ---------------------------------------------------- | --------- | ------------------------------------------------------------------------------------------------------------ |
-| `prc_platform_post_publish_pipeline_should_process`  | Filter    | Temporarily returns `false` during `update_children` so chapter `wp_update_post` calls do not re-enter the sync or async pipeline |
-| `get_next_post_where`                                | Filter    | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order |
-| `get_previous_post_where`                            | Filter    | Same as above for `get_previous_post()`                                                                      |
-| `the_title`                                          | Filter    | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts                                       |
+| Hook                                                | Direction | Description                                                                                                                       |
+| --------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `prc_platform_post_publish_pipeline_should_process` | Filter    | Temporarily returns `false` during `update_children` so chapter `wp_update_post` calls do not re-enter the sync or async pipeline |
+| `get_next_post_where`                               | Filter    | Replaces the standard WHERE clause with a package-aware one so `get_next_post()` traverses chapters in order                      |
+| `get_previous_post_where`                           | Filter    | Same as above for `get_previous_post()`                                                                                           |
+| `the_title`                                         | Filter    | In WP Admin list views, prepends `&mdash; ` to titles of chapter posts                                                            |
 
 ### Filters provided
 
 | Hook                                         | Description                                                                                                                         |
 | -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `prc_platform_post_report_package_materials` | Filters the materials array before it is returned by `get_package_materials()`. Receives `$materials` (array) and `$post_id` (int). |
+| `prc_report_package_toplines_client_ip`      | Filters the IP used to throttle `GET /prc-api/v3/report-package/toplines`. Receives `$ip` (string).                                 |
 
 ## REST fields
 
-All fields are read-only (GET only) and appended to existing post REST responses.
+Most fields are read-only (GET only) and appended to existing post REST responses. A separate public catalog lives at `GET /prc-api/v3/report-package/toplines`. That route is limited to 30 requests per IP per minute (`HTTP 429` `rate_limited`).
 
 | Field               | Post types            | Callback                                                                                       |
 | ------------------- | --------------------- | ---------------------------------------------------------------------------------------------- |
@@ -101,15 +102,16 @@ All meta is registered on `post`, exposed via REST, and revision-enabled.
 
 Defined in `includes/utils.php` under the `PRC\Platform\Report_Package` namespace.
 
-| Function                                        | Returns | Description                                                                                                   |
-| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `get_package_id( $post_id )`                    | `int`   | Returns the package root ID. If `$post_id` is a child, returns its parent.                                    |
-| `is_report_package( $post_id )`                 | `bool`  | True if the post is a top-level package (has chapters, no parent).                                            |
-| `is_chapter_part_of_report_package( $post_id )` | `bool`  | True if the post (or its parent) has `multiSectionReport` meta.                                               |
-| `is_part_of_a_report_package( $post_id )`       | `bool`  | True for both root packages and chapter posts.                                                                |
-| `get_package_chapters( $post_id )`              | `array` | Returns ordered TOC array including root post, using `construct_chapter()`.                                   |
-| `get_package_materials( $post_id )`             | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection.           |
-| `get_pagination( $post_id )`                    | `array` | Wraps `PRC\BlockUtils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`. |
+| Function                                        | Returns | Description                                                                                                         |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| `get_package_id( $post_id )`                    | `int`   | Returns the package root ID. If `$post_id` is a child, returns its parent.                                          |
+| `is_report_package( $post_id )`                 | `bool`  | True if the post is a top-level package (has chapters, no parent).                                                  |
+| `is_chapter_part_of_report_package( $post_id )` | `bool`  | True if the post (or its parent) has `multiSectionReport` meta.                                                     |
+| `is_part_of_a_report_package( $post_id )`       | `bool`  | True for both root packages and chapter posts.                                                                      |
+| `get_package_chapters( $post_id )`              | `array` | Returns ordered TOC array including root post, using `construct_chapter()`.                                         |
+| `get_package_materials( $post_id )`             | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection.                 |
+| `get_topline_materials_for_post( $post_id )`    | `array` | Catalog rows (`postId`, `title`, `url`, `attachmentId`, `label`, `date`) for `type=topline` materials on that post. |
+| `get_pagination( $post_id )`                    | `array` | Wraps `PRC\BlockUtils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`.       |
 
 ## Constants
 

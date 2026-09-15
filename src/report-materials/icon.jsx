@@ -1,8 +1,8 @@
 /**
- * External Dependencies
+ * WordPress Dependencies
  */
-import { Icon } from '@prc/icons';
+import { Icon, listView } from '@wordpress/icons';
 
 export default function () {
-	return <Icon icon="list-tree" />;
+	return <Icon icon={listView} />;
 }

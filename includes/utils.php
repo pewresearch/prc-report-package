@@ -46,7 +46,7 @@ function clear_report_package_chapters_cache( int $parent_id ): void {
 /**
  * Given a post_id, return parent's ID if this post is a child.
  *
- * @param int $post_id
+ * @param int $post_id The post ID.
  * @return int
  */
 function get_package_id( int $post_id ) {
@@ -159,6 +159,73 @@ function get_package_materials( $post_id ) {
 	}
 
 	return $materials;
+}
+
+/**
+ * Catalog rows for topline PDFs on a post.
+ *
+ * Reads `reportMaterials` meta directly. Does not call get_package_materials(),
+ * which can prepend Print Engine for logged-in users.
+ *
+ * @param int $post_id Post ID that owns the materials meta.
+ * @return array<int, array{postId: int, title: string, url: string, attachmentId: int|null, label: string, date: string}>
+ */
+function get_topline_materials_for_post( int $post_id ): array {
+	if ( $post_id <= 0 ) {
+		return array();
+	}
+
+	$materials = get_post_meta( $post_id, Rest_API::$package_materials_meta_key, true );
+
+	if ( is_array( $materials ) && isset( $materials['key'] ) && ( isset( $materials['type'] ) || isset( $materials['url'] ) || isset( $materials['label'] ) ) ) {
+		$materials = array( $materials );
+	}
+
+	if ( ! is_array( $materials ) ) {
+		return array();
+	}
+
+	$title = html_entity_decode( get_the_title( $post_id ) );
+	$date  = mysql_to_rfc3339( get_post_field( 'post_date', $post_id ) );
+	$items = array();
+
+	foreach ( $materials as $material ) {
+		if ( ! is_array( $material ) ) {
+			continue;
+		}
+
+		$type = $material['type'] ?? '';
+		$url  = $material['url'] ?? '';
+		if ( 'topline' !== $type || ! is_string( $url ) || '' === $url ) {
+			continue;
+		}
+
+		$sanitized_url = esc_url_raw( $url );
+		if ( '' === $sanitized_url ) {
+			continue;
+		}
+
+		$attachment_id = null;
+		if ( isset( $material['attachmentId'] ) && is_numeric( $material['attachmentId'] ) && (int) $material['attachmentId'] > 0 ) {
+			$attachment_id = (int) $material['attachmentId'];
+		}
+
+		$label = 'Topline';
+		if ( isset( $material['label'] ) && is_string( $material['label'] ) && '' !== $material['label'] ) {
+			$label = sanitize_text_field( $material['label'] );
+		}
+
+		$items[] = array(
+			'postId'       => $post_id,
+			'title'        => $title,
+			'url'          => $sanitized_url,
+			'attachmentId' => $attachment_id,
+			'label'        => $label,
+			'date'         => $date,
+		);
+	}
+
+	return $items;
 }
 
 /**

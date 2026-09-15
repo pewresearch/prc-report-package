@@ -2,13 +2,17 @@
  * External Dependencies
  */
 import { List } from 'react-movable';
-// import { WPEntitySearch } from '@prc/components';
 
 /**
  * WordPress Dependencies
  */
 import { Fragment } from '@wordpress/element';
-import { BaseControl, Button, ExternalLink, CardDivider } from '@wordpress/components';
+import {
+	BaseControl,
+	Button,
+	ExternalLink,
+	CardDivider,
+} from '@wordpress/components';
 
 /**
  * Internal Dependencies
@@ -17,7 +21,7 @@ import { randomId } from '../utils';
 import { usePostReportPackage } from '../context';
 import ListItem from '../list-item';
 import ExistingChapterToolbar from './existing-chapter-toolbar';
-import PostSearchByEditUrlField from './post-search-by-edit-url-field';
+import ChapterPostSearch from './chapter-post-search';
 
 export default function Chapters() {
 	const ITEMS_TYPE = 'chapters';
@@ -29,7 +33,6 @@ export default function Chapters() {
 		updateItem,
 		postId,
 		allowEditing,
-		parentPost,
 		parentPostTitle,
 		isChild,
 	} = usePostReportPackage();
@@ -62,7 +65,7 @@ export default function Chapters() {
 								onRemove={() => remove(index, ITEMS_TYPE)}
 							>
 								{null === value.postId && (
-									<PostSearchByEditUrlField
+									<ChapterPostSearch
 										hocOnChange={(_postId) =>
 											updateItem(
 												index,
@@ -87,6 +90,8 @@ export default function Chapters() {
 				/>
 				<Button
 					variant="primary"
+					__next40pxDefaultSize
+					style={{ width: '100%', justifyContent: 'center' }}
 					onClick={() =>
 						append(randomId(), { postId: null }, ITEMS_TYPE)
 					}
