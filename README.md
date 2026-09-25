@@ -21,7 +21,7 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 | File                                              | Purpose                                                                                                                                 |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `prc-report-package.php`                          | Plugin entry point; defines constants, registers activation/deactivation hooks, boots `Plugin`                                          |
-| `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\BlockUtils\load_blocks`                                         |
+| `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\Primitives\BlockUtils\load_blocks`                              |
 | `includes/class-loader.php`                       | Hook registration queue (standard PRC loader pattern)                                                                                   |
 | `includes/class-rest-api.php`                     | Registers post meta fields and REST fields; defines meta key constants                                                                  |
 | `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses             |
@@ -36,10 +36,10 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 
 ## Blocks
 
-| Block                         | Name              | Description                                                                                                                  |
-| ----------------------------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `prc-block/report-materials`  | Report Materials  | Renders a `<ul>` of all materials for the current post's package; reads `reportMaterials` meta via `get_package_materials()` |
-| `prc-block/report-pagination` | Report Pagination | Renders chapter pagination and a "Next: …" button; reads from `get_pagination()` which wraps `PRC\BlockUtils\Pagination`     |
+| Block                         | Name              | Description                                                                                                                         |
+| ----------------------------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `prc-block/report-materials`  | Report Materials  | Renders a `<ul>` of all materials for the current post's package; reads `reportMaterials` meta via `get_package_materials()`        |
+| `prc-block/report-pagination` | Report Pagination | Renders chapter pagination and a "Next: …" button; reads from `get_pagination()` which wraps `PRC\Primitives\BlockUtils\Pagination` |
 
 Both blocks are dynamic (PHP-rendered), use `postId` context, and support color, spacing, and typography controls.
 
@@ -102,16 +102,16 @@ All meta is registered on `post`, exposed via REST, and revision-enabled.
 
 Defined in `includes/utils.php` under the `PRC\Platform\Report_Package` namespace.
 
-| Function                                        | Returns | Description                                                                                                         |
-| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
-| `get_package_id( $post_id )`                    | `int`   | Returns the package root ID. If `$post_id` is a child, returns its parent.                                          |
-| `is_report_package( $post_id )`                 | `bool`  | True if the post is a top-level package (has chapters, no parent).                                                  |
-| `is_chapter_part_of_report_package( $post_id )` | `bool`  | True if the post (or its parent) has `multiSectionReport` meta.                                                     |
-| `is_part_of_a_report_package( $post_id )`       | `bool`  | True for both root packages and chapter posts.                                                                      |
-| `get_package_chapters( $post_id )`              | `array` | Returns ordered TOC array including root post, using `construct_chapter()`.                                         |
-| `get_package_materials( $post_id )`             | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection.                 |
-| `get_topline_materials_for_post( $post_id )`    | `array` | Catalog rows (`postId`, `title`, `url`, `attachmentId`, `label`, `date`) for `type=topline` materials on that post. |
-| `get_pagination( $post_id )`                    | `array` | Wraps `PRC\BlockUtils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`.       |
+| Function                                        | Returns | Description                                                                                                              |
+| ----------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `get_package_id( $post_id )`                    | `int`   | Returns the package root ID. If `$post_id` is a child, returns its parent.                                               |
+| `is_report_package( $post_id )`                 | `bool`  | True if the post is a top-level package (has chapters, no parent).                                                       |
+| `is_chapter_part_of_report_package( $post_id )` | `bool`  | True if the post (or its parent) has `multiSectionReport` meta.                                                          |
+| `is_part_of_a_report_package( $post_id )`       | `bool`  | True for both root packages and chapter posts.                                                                           |
+| `get_package_chapters( $post_id )`              | `array` | Returns ordered TOC array including root post, using `construct_chapter()`.                                              |
+| `get_package_materials( $post_id )`             | `array` | Returns materials for the package root. Handles meta normalization and Print Engine beta injection.                      |
+| `get_topline_materials_for_post( $post_id )`    | `array` | Catalog rows (`postId`, `title`, `url`, `attachmentId`, `label`, `date`) for `type=topline` materials on that post.      |
+| `get_pagination( $post_id )`                    | `array` | Wraps `PRC\Primitives\BlockUtils\Pagination` to return `current_post`, `next_post`, `previous_post`, `pagination_items`. |
 
 ## Constants
 
@@ -143,7 +143,7 @@ Uses `WP_Block_Processor` (WordPress 6.9+) for efficient block traversal; falls 
 
 - **Required plugin:** `prc-platform-core`
 - **PHP:** 8.2+, **WordPress:** 6.7+
-- **PHP classes:** `PRC\BlockUtils\load_blocks`, `PRC\BlockUtils\Pagination`, `PRC\BlockUtils\get_block_gap_support_value`, `PRC\Platform\Icons\render`
+- **PHP classes:** `PRC\Primitives\BlockUtils\load_blocks`, `PRC\Primitives\BlockUtils\Pagination`, `PRC\Primitives\BlockUtils\get_block_gap_support_value`, `PRC\Platform\Icons\render`
 - **Optional:** Distributor plugin — integration is gated on `function_exists( 'distributor_register_data' )`
 
 ## Development

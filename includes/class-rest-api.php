@@ -367,19 +367,9 @@ class Rest_API {
 				'type'              => 'array',
 				'description'       => 'Array of package materials.',
 				'show_in_rest'      => array(
-					// This sanitizes the data, making sure empty keys are removed.
-					'prepare_callback' => function ( $value, $rest_request ) {
-						$procssed = array();
-						foreach ( $value as $obj ) {
-							$keys = array_keys( $obj );
-							foreach ( $keys as $key ) {
-								if ( empty( $obj[ $key ] ) ) {
-									unset( $obj[ $key ] );
-								}
-							}
-							$procssed[] = $obj;
-						}
-						return $procssed;
+					// Normalize corrupt/legacy meta (empty string, scalar URL) before REST output.
+					'prepare_callback' => function ( $value ) {
+						return $this->sanitize_materials_array( $value );
 					},
 					'schema'           => array(
 						'items' => array(
@@ -497,9 +487,9 @@ class Rest_API {
 		);
 
 		/**
-		 * Parent info for child posts.
+		 * Parent info for child posts in a report package.
 		 *
-		 * @TODO: We should move this somewhere more genreal...
+		 * @TODO: We should move this somewhere more general.
 		 */
 		register_rest_field(
 			'post',
@@ -658,6 +648,19 @@ class Rest_API {
 	// ------------------------------------------------------------------
 
 	/**
+	 * Sanitize a materials field that must be a string.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	private function stringify_materials_field( $value ) {
+		if ( is_scalar( $value ) ) {
+			return sanitize_text_field( (string) $value );
+		}
+		return '';
+	}
+
+	/**
 	 * Authorize writes to reportMaterials meta.
 	 *
 	 * @param bool   $allowed   Whether the user can add the object meta.
@@ -694,22 +697,25 @@ class Rest_API {
 			}
 			$item = array();
 			if ( isset( $row['key'] ) ) {
-				$item['key'] = sanitize_text_field( (string) $row['key'] );
+				$item['key'] = $this->stringify_materials_field( $row['key'] );
 			}
 			if ( isset( $row['type'] ) ) {
-				$item['type'] = sanitize_text_field( (string) $row['type'] );
+				$item['type'] = $this->stringify_materials_field( $row['type'] );
 			}
 			if ( isset( $row['url'] ) ) {
-				$item['url'] = esc_url_raw( (string) $row['url'] );
+				$url = $row['url'];
+				if ( is_scalar( $url ) ) {
+					$item['url'] = esc_url_raw( (string) $url );
+				}
 			}
 			if ( isset( $row['label'] ) ) {
-				$item['label'] = sanitize_text_field( (string) $row['label'] );
+				$item['label'] = $this->stringify_materials_field( $row['label'] );
 			}
 			if ( isset( $row['attachmentId'] ) && null !== $row['attachmentId'] ) {
 				$item['attachmentId'] = (int) $row['attachmentId'];
 			}
 			if ( isset( $row['icon'] ) ) {
-				$item['icon'] = sanitize_text_field( (string) $row['icon'] );
+				$item['icon'] = $this->stringify_materials_field( $row['icon'] );
 			}
 			$out[] = $item;
 		}

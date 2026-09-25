@@ -144,7 +144,7 @@ class Report_Materials {
 		$hover_text  = $attributes['customHoverTextColor'] ?? '';
 		$active_bg   = $attributes['customActiveBackgroundColor'] ?? '';
 		$active_text = $attributes['customActiveTextColor'] ?? '';
-		$block_gap   = \PRC\BlockUtils\get_block_gap_support_value( $attributes );
+		$block_gap   = \PRC\Primitives\BlockUtils\get_block_gap_support_value( $attributes );
 
 		$styles = array(
 			'--hover-background-color'  => $hover_bg,

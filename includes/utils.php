@@ -372,7 +372,7 @@ function get_package_chapters( $post_id ) {
  */
 function get_pagination( $post_id ) {
 	$items      = get_package_chapters( $post_id );
-	$pagination = new \PRC\BlockUtils\Pagination( $items );
+	$pagination = new \PRC\Primitives\BlockUtils\Pagination( $items );
 	$to_return  = array(
 		'current_post'     => $pagination->get_current_item(),
 		'next_post'        => $pagination->get_next_item(),
