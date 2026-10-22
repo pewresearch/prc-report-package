@@ -12,11 +12,7 @@ import { useCommand } from '@wordpress/commands';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as editPostStore } from '@wordpress/edit-post';
 import { registerPlugin } from '@wordpress/plugins';
-import {
-	store as editorStore,
-	PluginSidebar,
-	PluginPrePublishPanel,
-} from '@wordpress/editor';
+import { store as editorStore, PluginSidebar } from '@wordpress/editor';
 import { Notice } from '@wordpress/components';
 
 /**
@@ -25,6 +21,7 @@ import { Notice } from '@wordpress/components';
 import { ProvidePostReportPackage } from './context';
 import ChaptersPanel from './chapters';
 import MaterialsPanel from './materials';
+import PrePublishPanel from './pre-publish-panel';
 
 const PLUGIN_NAME = 'prc-platform-post-report-package';
 
@@ -80,23 +77,7 @@ function ReportPackagePanel() {
 					<ChaptersPanel />
 				</ProvidePostReportPackage>
 			</PluginSidebar>
-			{!isChildPost && (
-				<PluginPrePublishPanel
-					title="Review Report Package"
-					icon={false}
-				>
-					<ProvidePostReportPackage
-						{...{
-							postType,
-							postId: parentId,
-							currentPostId: postId,
-						}}
-					>
-						<MaterialsPanel />
-						<ChaptersPanel />
-					</ProvidePostReportPackage>
-				</PluginPrePublishPanel>
-			)}
+			{!isChildPost && <PrePublishPanel {...{ postType, postId }} />}
 		</Fragment>
 	);
 }

@@ -18,21 +18,22 @@ Manages multi-post research report packages on the PRC Platform. A report packag
 
 ## Key files
 
-| File                                              | Purpose                                                                                                                                 |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `prc-report-package.php`                          | Plugin entry point; defines constants, registers activation/deactivation hooks, boots `Plugin`                                          |
-| `includes/class-plugin.php`                       | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\Primitives\BlockUtils\load_blocks`                              |
-| `includes/class-loader.php`                       | Hook registration queue (standard PRC loader pattern)                                                                                   |
-| `includes/class-rest-api.php`                     | Registers post meta fields and REST fields; defines meta key constants                                                                  |
-| `includes/class-relationship-manager.php`         | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses             |
-| `includes/class-wp-admin.php`                     | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts                                                          |
-| `includes/class-distributor.php`                  | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration                        |
-| `includes/utils.php`                              | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
-| `includes/inspector-sidebar-panel/src/index.js`   | Block editor plugin entry; renders `PluginSidebar` + `PluginPrePublishPanel`                                                            |
-| `includes/inspector-sidebar-panel/src/chapters/`  | Chapters management UI (add/search existing, create draft, reorder)                                                                     |
-| `includes/inspector-sidebar-panel/src/materials/` | Materials management UI (add, reorder, set type)                                                                                        |
-| `build/report-materials/`                         | `prc-block/report-materials` block (block.json + PHP render class + JS editor)                                                          |
-| `build/report-pagination/`                        | `prc-block/report-pagination` block (block.json + PHP render class + JS editor)                                                         |
+| File                                                         | Purpose                                                                                                                                 |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `prc-report-package.php`                                     | Plugin entry point; defines constants, registers activation/deactivation hooks, boots `Plugin`                                          |
+| `includes/class-plugin.php`                                  | Orchestrates all dependencies via `Loader`; initializes blocks via `PRC\Primitives\BlockUtils\load_blocks`                              |
+| `includes/class-loader.php`                                  | Hook registration queue (standard PRC loader pattern)                                                                                   |
+| `includes/class-rest-api.php`                                | Registers post meta fields and REST fields; defines meta key constants                                                                  |
+| `includes/class-relationship-manager.php`                    | Syncs child posts on parent update/publish; async reconcile of chapter `post_parent`; overrides adjacent-post WHERE clauses             |
+| `includes/class-wp-admin.php`                                | Enqueues inspector sidebar panel; modifies admin post titles for chapter posts                                                          |
+| `includes/class-distributor.php`                             | Distributor data handlers: pre/post-distribute callbacks for chapters, materials, parts; post_parent restoration                        |
+| `includes/utils.php`                                         | Public helper functions: `get_package_id`, `is_report_package`, `get_package_chapters`, `get_package_materials`, `get_pagination`, etc. |
+| `includes/inspector-sidebar-panel/src/index.js`              | Block editor plugin entry; renders `PluginSidebar` + the pre-publish panel                                                              |
+| `includes/inspector-sidebar-panel/src/pre-publish-panel.jsx` | `PluginPrePublishPanel`; renders only the materials and chapters panels that have content, and nothing when both are empty              |
+| `includes/inspector-sidebar-panel/src/chapters/`             | Chapters management UI (add/search existing, create draft, reorder)                                                                     |
+| `includes/inspector-sidebar-panel/src/materials/`            | Materials management UI (add, reorder, set type)                                                                                        |
+| `build/report-materials/`                                    | `prc-block/report-materials` block (block.json + PHP render class + JS editor)                                                          |
+| `build/report-pagination/`                                   | `prc-block/report-pagination` block (block.json + PHP render class + JS editor)                                                         |
 
 ## Blocks
 

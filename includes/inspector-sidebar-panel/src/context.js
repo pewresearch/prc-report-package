@@ -24,6 +24,16 @@ const META_KEY_MAP = {
 	parts: 'package_parts',
 };
 
+const isNonEmptyList = (value) => Array.isArray(value) && value.length > 0;
+
+const useReportPackageContents = (postType, postId) => {
+	const [meta] = useEntityProp('postType', postType, 'meta', postId);
+	return {
+		hasMaterials: isNonEmptyList(meta?.[META_KEY_MAP.materials]),
+		hasChapters: isNonEmptyList(meta?.[META_KEY_MAP.chapters]),
+	};
+};
+
 const usePostReportPackageContext = (parentId, postType, postId) => {
 	const isChild = useMemo(() => parentId !== postId, [parentId, postId]);
 
@@ -95,9 +105,7 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 		return canDelete && canUpdate;
 	}, [isResolving, canDelete, canUpdate]);
 
-	const hasChapters = useMemo(() => {
-		return Array.isArray(chapters) && chapters.length > 0;
-	}, [chapters]);
+	const hasChapters = useMemo(() => isNonEmptyList(chapters), [chapters]);
 
 	const getRefByItemType = useCallback((itemsType) => {
 		if ('materials' === itemsType) return materialsRef;
@@ -157,7 +165,7 @@ const usePostReportPackageContext = (parentId, postType, postId) => {
 			const next = Array.isArray(ref.current)
 				? ref.current.map((item, i) =>
 						i === index ? { ...item, [valueKey]: value } : item
-				  )
+					)
 				: [];
 			ref.current = next;
 			writeMeta(metaKey, next);
@@ -202,5 +210,9 @@ function ProvidePostReportPackage({ parentId, postType, postId, children }) {
 	);
 }
 
-export { ProvidePostReportPackage, usePostReportPackage };
+export {
+	ProvidePostReportPackage,
+	usePostReportPackage,
+	useReportPackageContents,
+};
 export default ProvidePostReportPackage;
