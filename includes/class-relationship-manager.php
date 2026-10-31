@@ -78,10 +78,6 @@ class Relationship_Manager {
 			return;
 		}
 
-		if ( ! function_exists( '\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event' ) ) {
-			return;
-		}
-
 		foreach ( array_unique( array_map( 'intval', $result['success'] ) ) as $child_id ) {
 			if ( $child_id <= 0 ) {
 				continue;
@@ -90,7 +86,7 @@ class Relationship_Manager {
 			if ( isset( $prior_statuses[ $child_id ] ) && 'publish' === $prior_statuses[ $child_id ] ) {
 				continue;
 			}
-			\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event( $child_id, 'publish' );
+			\PRC\Primitives\Post_Publish_Pipeline\enqueue_async_event( $child_id, 'publish' );
 		}
 	}
 
@@ -144,8 +140,8 @@ class Relationship_Manager {
 					continue;
 				}
 
-				$child_status = get_post_status( $child_id );
-				$child_date   = get_post_field( 'post_date', $child_id );
+				$child_status      = get_post_status( $child_id );
+				$child_date        = get_post_field( 'post_date', $child_id );
 				$needs_post_update = (
 					$child_status !== $parent_post_status ||
 					$child_date !== $parent_post_date
@@ -229,11 +225,7 @@ class Relationship_Manager {
 		}
 
 		// Always enqueue: sync incremental_save runs before REST persists meta.
-		if ( ! function_exists( '\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event' ) ) {
-			return;
-		}
-
-		\PRC\Platform\Post_Publish_Pipeline\enqueue_async_event( (int) $post->ID, 'incremental_save' );
+		\PRC\Primitives\Post_Publish_Pipeline\enqueue_async_event( (int) $post->ID, 'incremental_save' );
 	}
 
 	/**
@@ -248,10 +240,10 @@ class Relationship_Manager {
 			return;
 		}
 
-		$parent_id        = (int) $post->ID;
-		$post_type        = $post->post_type;
-		$desired_ids      = $this->get_desired_chapter_ids( $parent_id );
-		$desired_lookup   = array_fill_keys( $desired_ids, true );
+		$parent_id         = (int) $post->ID;
+		$post_type         = $post->post_type;
+		$desired_ids       = $this->get_desired_chapter_ids( $parent_id );
+		$desired_lookup    = array_fill_keys( $desired_ids, true );
 		$current_child_ids = $this->get_current_child_post_ids( $parent_id, $post_type );
 
 		$skip_pipeline = static function () {
@@ -355,7 +347,7 @@ class Relationship_Manager {
 				'post_type'      => $post_type,
 				'post_parent'    => (int) $parent_id,
 				'post_status'    => 'any',
-				'posts_per_page' => -1,
+				'posts_per_page' => -1, // phpcs:ignore WordPressVIPMinimum.Performance.NoPaging.posts_per_page_posts_per_page -- reconcile must see every chapter that points at this root.
 				'fields'         => 'ids',
 				'orderby'        => 'ID',
 				'order'          => 'ASC',
@@ -404,9 +396,9 @@ class Relationship_Manager {
 	/**
 	 * Helper function for getting the "adjacent" post in a report-package.
 	 *
-	 * @param mixed  $where
-	 * @param mixed  $post
-	 * @param string $adjacent
+	 * @param mixed  $where    The SQL WHERE clause.
+	 * @param mixed  $post     The current post.
+	 * @param string $adjacent Pagination key, `next_post` or `previous_post`.
 	 * @return mixed
 	 */
 	private function filter_adjacent_post( $where, $post, $adjacent = 'next_post' ) {
@@ -431,11 +423,11 @@ class Relationship_Manager {
 	 *
 	 * @hook get_next_post_where
 	 *
-	 * @param mixed $where
-	 * @param mixed $in_same_term
-	 * @param mixed $excluded_terms
-	 * @param mixed $taxonomy
-	 * @param mixed $post
+	 * @param mixed $where          The SQL WHERE clause.
+	 * @param mixed $in_same_term   Whether the post must share a term.
+	 * @param mixed $excluded_terms Excluded term IDs.
+	 * @param mixed $taxonomy       Taxonomy for the term check.
+	 * @param mixed $post           The current post.
 	 * @return mixed
 	 */
 	public function filter_next_post( $where, $in_same_term, $excluded_terms, $taxonomy, $post ) {
@@ -447,11 +439,11 @@ class Relationship_Manager {
 	 *
 	 * @hook get_previous_post_where
 	 *
-	 * @param mixed $where
-	 * @param mixed $in_same_term
-	 * @param mixed $excluded_terms
-	 * @param mixed $taxonomy
-	 * @param mixed $post
+	 * @param mixed $where          The SQL WHERE clause.
+	 * @param mixed $in_same_term   Whether the post must share a term.
+	 * @param mixed $excluded_terms Excluded term IDs.
+	 * @param mixed $taxonomy       Taxonomy for the term check.
+	 * @param mixed $post           The current post.
 	 * @return mixed
 	 */
 	public function filter_prev_post( $where, $in_same_term, $excluded_terms, $taxonomy, $post ) {

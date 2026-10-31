@@ -38,9 +38,9 @@ built modules 2.51 KiB (css/mini-extract) 35.8 KiB (javascript) [1m[33m[built]
   javascript modules 35.8 KiB
     [1m./src/report-materials/index.js + 21 modules[39m[22m 15.6 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
     [1m./src/report-pagination/index.js + 20 modules[39m[22m 20.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 8912 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 7854 ms
 
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 162 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 141 ms
 Block metadata PHP file generated at: build/blocks-manifest.php
 
 > @prc/report-package@1.2.3 build:inspector-panel
@@ -55,4 +55,4 @@ Entrypoint [1mindex[39m[22m 32 KiB = [1m[32mindex.js[39m[22m 31.6 KiB [1
 orphan modules 274 KiB [1m[33m[orphan][39m[22m 352 modules
 runtime modules 663 bytes 3 modules
 [1m./includes/inspector-sidebar-panel/src/index.js + 45 modules[39m[22m 71.2 KiB [1m[31m[not cacheable][39m[22m [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
-webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6615 ms
+webpack 5.106.2 compiled [1m[32msuccessfully[39m[22m in 6914 ms
