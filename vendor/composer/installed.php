@@ -3,7 +3,7 @@
         'name' => 'pewresearch/prc-report-package',
         'pretty_version' => 'dev-trunk',
         'version' => 'dev-trunk',
-        'reference' => 'fcacad922fd8ac2f592d51f58e024194b9e352e8',
+        'reference' => 'f01c7c5e39e340d942aa644c09afefcc70fd8827',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -22,7 +22,7 @@
         'pewresearch/prc-report-package' => array(
             'pretty_version' => 'dev-trunk',
             'version' => 'dev-trunk',
-            'reference' => 'fcacad922fd8ac2f592d51f58e024194b9e352e8',
+            'reference' => 'f01c7c5e39e340d942aa644c09afefcc70fd8827',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

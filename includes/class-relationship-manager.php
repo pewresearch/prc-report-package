@@ -35,6 +35,7 @@ class Relationship_Manager {
 			$loader->add_action( 'prc_platform_async_on_incremental_save', $this, 'reconcile_child_post_parents', 10, 1 );
 			$loader->add_action( 'prc_platform_on_update', $this, 'update_children', 10, 1 );
 			$loader->add_action( 'prc_platform_on_publish', $this, 'update_children_on_publish', 10, 1 );
+			$loader->add_action( 'prc_platform_on_pre_publish', $this, 'forward_pre_publish_to_chapters', 10, 1 );
 			$loader->add_action( 'prc_platform_on_update', $this, 'clear_chapters_cache_on_update', 20, 1 );
 			$loader->add_action( 'prc_platform_on_publish', $this, 'clear_chapters_cache_on_update', 20, 1 );
 			$loader->add_filter(
@@ -87,6 +88,24 @@ class Relationship_Manager {
 				continue;
 			}
 			\PRC\Primitives\Post_Publish_Pipeline\enqueue_async_event( $child_id, 'publish' );
+		}
+	}
+
+	/**
+	 * Give chapters their scheduled package's pre-publish event. Chapters stay drafts
+	 * until the package publishes, so they never get a pre-publish job of their own.
+	 *
+	 * @hook prc_platform_on_pre_publish
+	 *
+	 * @param mixed $post The package post object.
+	 */
+	public function forward_pre_publish_to_chapters( $post ) {
+		if ( ! $this->is_report_package_root( $post ) ) {
+			return;
+		}
+
+		foreach ( $this->get_desired_chapter_ids( (int) $post->ID ) as $chapter_id ) {
+			\PRC\Primitives\Post_Publish_Pipeline\dispatch_pre_publish( $chapter_id );
 		}
 	}
 
